@@ -133,8 +133,8 @@ proporciona una interfaz uniforme para que el procesador acceda a memorias y per
 
 ## 6.1 Objetivo
 
-El segundo nivel divide el sistema en sus subsistemas principales y muestra
-cómo se comunican con el procesador.
+Representar la arquitectura funcional del sistema mediante la división del diseño en sus principales subsistemas,
+mostrando las conexiones entre el procesador RISC-V, las memorias y los periféricos.
 
 ## 6.2 Diagrama
 
@@ -144,91 +144,56 @@ cómo se comunican con el procesador.
 
 ## 6.3 Subsistemas
 
-| Subsistema | Función |
-|---|---|
-| Procesamiento RISC-V | Ejecutar el programa del juego |
-| ROM | Almacenar las instrucciones |
-| RAM | Almacenar datos variables |
-| Interconexión | Realizar el mapeo de memoria |
-| Entradas Jugador 1 | Leer botones y switches |
-| UART | Comunicar FPGA y PC |
-| VGA | Generar la imagen del juego |
-| Indicadores | Controlar displays, LED y buzzer |
+| Subsistema | Función | Descripción |
+|---|---|---|
+| Procesamiento RISC-V | Ejecutar el programa del juego | Ejecuta las instrucciones almacenadas en la ROM y controla la lógica del juego, incluyendo colocación de barcos, validación de posiciones, manejo de turnos, procesamiento de disparos, detección de impactos, barcos hundidos y condición de victoria. Realiza operaciones de lectura y escritura sobre RAM y periféricos. |
+| ROM | Almacenar las instrucciones | Contiene las instrucciones de 32 bits que forman el programa en ensamblador ejecutado por el procesador RISC-V. El CPU proporciona una dirección de programa y la ROM devuelve la instrucción correspondiente. |
+| RAM | Almacenar datos variables | Guarda la información que cambia durante la ejecución, como los tableros de ambos jugadores, posiciones de barcos, estado de casillas, turno actual, barcos hundidos, contadores y otras variables utilizadas por el programa. |
+| Interconexión y mapeo de memoria | Comunicar el procesador con RAM y periféricos | Analiza la dirección generada por el procesador para determinar que dispositivo debe ser accedido. Genera las señales de selección y escritura correspondientes y selecciona el dato que debe regresar al CPU durante una operacion de lectura. |
+| Entradas Jugador 1 | Leer los controles físicos del jugador local | Recibe los 5 botones y switches utilizados por el jugador 1. Las señales son sincronizadas y los botones pasan por un proceso de eliminacion de rebotes.|
+| UART | Comunicar FPGA y PC | Canal de comunicación con el jugador 2. Recibe desde la PC información de colocación de barcos y disparos, y transmite hacia la aplicación información sobre aceptación de posiciones, resultados de disparos, cambios de turno y el resultado de la partida. |
+| VGA | Generar la interfaz visual del Jugador 1 | Produce las señales necesarias para mostrar en el monitor el tablero propio, el estado conocido del tablero rival, el cursor y la informacion relevante de la partida.|
+| Indicadores | Controlar displays, LED y buzzer | Agrupa los displays de siete segmentos, LED y buzzer. Los displays muestran información como las victorias acumuladas, el LED indica estados o fases de la partida y el buzzer genera sonidos diferentes de impacto, fallo, barco hundido, colocación invalida y fin de partida. |
 
-## 6.4 Justificación de la arquitectura
+## 6.4 Justificación
 
-La arquitectura utiliza un bloque de interconexión entre el procesador y los
-periféricos para implementar memoria mapeada.
-
-Esta decisión permite que el RISC-V acceda a RAM y periféricos mediante
-operaciones normales de lectura y escritura, simplificando el programa en
-ensamblador y manteniendo una interfaz común entre subsistemas.
+Esta arquitectura separa el sistema en subsistemas independientes conectados alrededor del procesador RISC-V. La ROM brinda las instrucciones, mientras que la RAM y los periféricos
+se integran mediante memoria mapeada, permitiendo al procesador acceder a todos ellos mediante una interfaz uniforme. De esta forma se facilita las pruebas por bloque y se
+simplifica la integración del sistema completo.
 
 ---
 
 # 7. Diseño de tercer nivel
 
-En esta sección se presenta la arquitectura interna propuesta para cada
-subsistema.
+## 7.1 Objetivo
+
+
+
+- diagrama,
+- descripción del funcionamiento,
+- bloques internos,
+- entradas y salidas,
+- señales internas relevantes,
+- decisiones de diseño,
+- justificación.
 
 ---
 
-## 7.1 Procesamiento RISC-V
+## 7.1 Memoria ROM
 
 ### Objetivo
 
-[Describir la función del procesador dentro del sistema.]
-
-### Diagrama
-
-![Procesamiento RISC-V](imagenes/riscv_nivel_3.png)
-
-**Figura 3. Diagrama de tercer nivel del procesador RISC-V.**
-
-### Bloques internos
-
-| Bloque | Función |
-|---|---|
-| Program Counter | |
-| Banco de registros | |
-| ALU | |
-| Unidad de control | |
-| Generador de inmediatos | |
-| Lógica de branch/jump | |
-| MUX de operandos | |
-| MUX de write-back | |
-
-### Entradas y salidas
-
-| Señal | Dirección | Ancho | Descripción |
-|---|---|---:|---|
-| `clk_i` | Entrada | 1 | |
-| `rst_i` | Entrada | 1 | |
-| `prog_instr_i` | Entrada | 32 | |
-| `data_in_i` | Entrada | 32 | |
-| `prog_address_o` | Salida | 32 | |
-| `data_address_o` | Salida | 32 | |
-| `data_out_o` | Salida | 32 | |
-| `data_we_o` | Salida | 1 | |
-
-### Decisiones y justificación
-
-[Explicar por qué se seleccionó esta arquitectura para el procesador.]
-
----
-
-## 7.2 Memoria ROM
-
-### Objetivo
-
-La ROM almacena el programa en ensamblador que será ejecutado por el
-procesador RISC-V.
+[Describir el objetivo de la memoria ROM dentro del sistema.]
 
 ### Diagrama
 
 ![ROM](imagenes/rom_nivel_3.png)
 
-**Figura 4. Diagrama de tercer nivel de la memoria ROM.**
+**Figura X. Diagrama de tercer nivel de la memoria ROM.**
+
+### Descripción del funcionamiento
+
+[Explicar el flujo de información dentro del módulo ROM.]
 
 ### Bloques internos
 
@@ -242,32 +207,42 @@ procesador RISC-V.
 
 | Señal | Dirección | Ancho | Descripción |
 |---|---|---:|---|
-| `prog_address_i` | Entrada | 32 | |
-| `prog_instr_o` | Salida | 32 | |
-| `clk_i` | Entrada | 1 | |
-| `rst_i` | Entrada | 1 | |
+| `prog_address_i` | Entrada | | |
+| `prog_instr_o` | Salida | | |
+| `clk_i` | Entrada | | |
+| `rst_i` | Entrada | | |
+
+### Señales internas relevantes
+
+| Señal | Ancho | Descripción |
+|---|---:|---|
+| | | |
 
 ### Organización de memoria
 
-[Indicar profundidad, ancho de palabra y forma de inicialización.]
+[Indicar rango de direcciones, ancho de palabra, profundidad y forma de inicialización.]
 
-### Justificación
+### Decisiones y justificación
 
-[Explicar por qué se utiliza una ROM independiente de la memoria de datos.]
+[Explicar las decisiones tomadas para la arquitectura de la ROM.]
 
 ---
 
-## 7.3 Memoria RAM
+## 7.2 Memoria RAM
 
 ### Objetivo
 
-La RAM almacena los datos que cambian durante la partida.
+[Describir el objetivo de la RAM dentro del sistema.]
 
 ### Diagrama
 
 ![RAM](imagenes/ram_nivel_3.png)
 
-**Figura 5. Diagrama de tercer nivel de la RAM.**
+**Figura X. Diagrama de tercer nivel de la memoria RAM.**
+
+### Descripción del funcionamiento
+
+[Explicar los caminos de lectura y escritura de la RAM.]
 
 ### Bloques internos
 
@@ -283,79 +258,391 @@ La RAM almacena los datos que cambian durante la partida.
 | Señal | Dirección | Ancho | Descripción |
 |---|---|---:|---|
 | `addr_i` | Entrada | | |
-| `wdata_i` | Entrada | 32 | |
-| `write_enable_i` | Entrada | 1 | |
-| `rdata_o` | Salida | 32 | |
-| `clk_i` | Entrada | 1 | |
-| `rst_i` | Entrada | 1 | |
+| `wdata_i` | Entrada | | |
+| `write_enable_i` | Entrada | | |
+| `rdata_o` | Salida | | |
+| `clk_i` | Entrada | | |
+| `rst_i` | Entrada | | |
+
+### Señales internas relevantes
+
+| Señal | Ancho | Descripción |
+|---|---:|---|
+| | | |
 
 ### Organización de datos en RAM
 
-| Región | Información almacenada | Tamaño |
-|---|---|---:|
-| Tablero Jugador 1 | | |
-| Tablero Jugador 2 | | |
-| Estado de barcos J1 | | |
-| Estado de barcos J2 | | |
-| Turno actual | | |
-| Contadores | | |
-| Variables auxiliares | | |
+| Región | Información almacenada | Tamaño | Dirección / índice |
+|---|---|---:|---|
+| Tablero Jugador 1 | | | |
+| Tablero Jugador 2 | | | |
+| Estado de barcos J1 | | | |
+| Estado de barcos J2 | | | |
+| Turno actual | | | |
+| Contadores | | | |
+| Variables auxiliares | | | |
 
-### Justificación
+### Decisiones y justificación
 
-[Explicar la organización seleccionada para representar los tableros y
-variables del juego.]
+[Explicar la organización elegida para la RAM y los datos del juego.]
 
 ---
 
-## 7.4 Interconexión y mapeo de memoria
+## 7.3 Interconexión y mapeo de memoria
 
 ### Objetivo
 
-Permitir que el RISC-V acceda a RAM y periféricos utilizando un único espacio
-de direcciones.
+[Describir el objetivo del bloque de interconexión.]
 
 ### Diagrama
 
 ![Mapeo de memoria](imagenes/mapeo_memoria_nivel_3.png)
 
-**Figura 6. Diagrama de interconexión y mapeo de memoria.**
+**Figura X. Diagrama de tercer nivel de la interconexión y mapeo de memoria.**
+
+### Descripción del funcionamiento
+
+[Explicar cómo se realizan las operaciones de lectura y escritura entre CPU,
+RAM y periféricos.]
 
 ### Bloques internos
 
 | Bloque | Función |
 |---|---|
-| Decodificador de direcciones | Selecciona el dispositivo correspondiente |
-| Decodificador de escritura | Genera las señales `write_enable` |
-| Multiplexor de lectura | Selecciona el dato que regresa al procesador |
+| Decodificador de direcciones | |
+| Decodificador de escritura | |
+| Multiplexor de lectura | |
+
+### Entradas y salidas
+
+| Señal | Dirección | Ancho | Descripción |
+|---|---|---:|---|
+| `data_address_i` | Entrada | | |
+| `data_out_i` | Entrada | | |
+| `data_we_i` | Entrada | | |
+| `data_in_o` | Salida | | |
+| | | | |
 
 ### Señales de selección
 
 | Señal | Dispositivo |
 |---|---|
-| `sel_ram` | RAM |
-| `sel_uart` | UART |
-| `sel_vga` | VGA |
-| `sel_j1` | Entradas Jugador 1 |
-| `sel_ind` | Indicadores |
+| `sel_ram` | |
+| `sel_uart` | |
+| `sel_vga` | |
+| `sel_j1` | |
+| `sel_ind` | |
+
+### Señales de escritura
+
+| Señal | Dispositivo |
+|---|---|
+| `we_ram` | |
+| `we_uart` | |
+| `we_vga` | |
+| `we_j1` | |
+| `we_ind` | |
 
 ### Mapa de memoria
 
-| Dispositivo | Dirección inicial | Dirección final | Uso |
+| Dispositivo / región | Dirección inicial | Dirección final | Uso |
 |---|---:|---:|---|
-| RAM | TBD | TBD | Memoria de datos |
-| UART | TBD | TBD | Comunicación con PC |
-| VGA | TBD | TBD | Memoria de video |
-| Entradas J1 | TBD | TBD | Botones y switches |
-| Indicadores | TBD | TBD | Displays, LED, buzzer |
+| ROM | | | |
+| RAM | | | |
+| UART | | | |
+| VGA | | | |
+| Entradas Jugador 1 | | | |
+| Indicadores | | | |
 
 ### Decodificación
 
-Agregar aquí las ecuaciones o condiciones utilizadas para generar:
+[Agregar las condiciones o ecuaciones utilizadas para generar las señales de
+selección y escritura.]
 
-```text
-sel_ram
-sel_uart
-sel_vga
-sel_j1
-sel_ind
+### Decisiones y justificación
+
+[Explicar por qué se utiliza memoria mapeada y cómo se organiza la interconexión.]
+
+---
+
+## 7.4 UART
+
+### Objetivo
+
+[Describir el objetivo del periférico UART.]
+
+### Diagrama
+
+![UART](imagenes/uart_nivel_3.png)
+
+**Figura X. Diagrama de tercer nivel del periférico UART.**
+
+### Descripción del funcionamiento
+
+[Explicar por separado el camino RX, el camino TX y el acceso desde el CPU.]
+
+### Bloques internos
+
+| Bloque | Función |
+|---|---|
+| Generador de baudrate | |
+| UART RX | |
+| Registro RX | |
+| Registro de estado | |
+| Lógica de decodificación de escritura | |
+| Registro TX | |
+| UART TX | |
+| MUX de lectura | |
+
+### Entradas y salidas
+
+| Señal | Dirección | Ancho | Descripción |
+|---|---|---:|---|
+| `uart_rx_i` | Entrada | | |
+| `uart_tx_o` | Salida | | |
+| `addr_i` | Entrada | | |
+| `wdata_i` | Entrada | | |
+| `write_enable_i` | Entrada | | |
+| `rdata_o` | Salida | | |
+| `clk_i` | Entrada | | |
+| `rst_i` | Entrada | | |
+
+### Señales internas relevantes
+
+| Señal | Ancho | Descripción |
+|---|---:|---|
+| `baud_tick` | | |
+| `rx_data` | | |
+| `rx_ready` | | |
+| `tx_data` | | |
+| `tx_busy` | | |
+| `tx_done` | | |
+| `tx_we` | | |
+
+### Registros internos
+
+| Dirección / `addr_i` | Registro | Función |
+|---|---|---|
+| | Control / Estado | |
+| | Datos TX | |
+| | Datos RX | |
+
+### Temporización UART
+
+[Indicar baudrate, relación con el reloj principal y cálculo del generador de baudrate.]
+
+### Decisiones y justificación
+
+[Explicar la división RX/TX, registros y temporización.]
+
+---
+
+## 7.5 Entradas del Jugador 1
+
+### Objetivo
+
+[Describir el objetivo del periférico de entradas.]
+
+### Diagrama
+
+![Entradas Jugador 1](imagenes/jugador1_nivel_3.png)
+
+**Figura X. Diagrama de tercer nivel de las entradas del Jugador 1.**
+
+### Descripción del funcionamiento
+
+[Explicar el recorrido desde las entradas físicas hasta el registro leído por el CPU.]
+
+### Bloques internos
+
+| Bloque | Función |
+|---|---|
+| Sincronizadores de botones | |
+| Debouncers | |
+| Sincronizadores de switches | |
+| Registro Status | |
+| MUX de lectura | |
+
+### Entradas y salidas
+
+| Señal | Dirección | Ancho | Descripción |
+|---|---|---:|---|
+| `btn_up_i` | Entrada | | |
+| `btn_down_i` | Entrada | | |
+| `btn_left_i` | Entrada | | |
+| `btn_right_i` | Entrada | | |
+| `btn_center_i` | Entrada | | |
+| `sw_sel_i` | Entrada | | |
+| `sw_rst_i` | Entrada | | |
+| `addr_i` | Entrada | | |
+| `rdata_o` | Salida | | |
+| `clk_i` | Entrada | | |
+| `rst_i` | Entrada | | |
+
+### Mapeo del registro Status
+
+| Bit | Señal | Descripción |
+|---:|---|---|
+| | | |
+
+### Señales internas relevantes
+
+| Señal | Descripción |
+|---|---|
+| | |
+
+### Decisiones y justificación
+
+[Explicar la necesidad de sincronización, debouncing y agrupación en un registro.]
+
+---
+
+## 7.6 Indicadores
+
+### Objetivo
+
+[Describir el objetivo del subsistema de indicadores.]
+
+### Diagrama
+
+![Indicadores](imagenes/indicadores_nivel_3.png)
+
+**Figura X. Diagrama de tercer nivel del subsistema de indicadores.**
+
+### Descripción del funcionamiento
+
+[Explicar por separado el funcionamiento del display, LED y buzzer.]
+
+### Bloques internos
+
+| Bloque | Función |
+|---|---|
+| Decodificador de dirección/escritura | |
+| Registro Display | |
+| Conversión/separación de dígitos | |
+| Decodificador 7 segmentos | |
+| Multiplexor de display | |
+| Registro LED | |
+| Registro Buzzer | |
+| Selector de sonido | |
+| Generador de frecuencia | |
+| MUX de lectura | |
+
+### Entradas y salidas
+
+| Señal | Dirección | Ancho | Descripción |
+|---|---|---:|---|
+| `addr_i` | Entrada | | |
+| `wdata_i` | Entrada | | |
+| `write_enable_i` | Entrada | | |
+| `rdata_o` | Salida | | |
+| `seg_o` | Salida | | |
+| `an_o` | Salida | | |
+| `led_o` | Salida | | |
+| `buzzer_o` | Salida | | |
+| `clk_i` | Entrada | | |
+| `rst_i` | Entrada | | |
+
+### Registros internos
+
+| Registro | Función | Dirección / `addr_i` |
+|---|---|---|
+| Display | | |
+| LED | | |
+| Buzzer | | |
+
+### Eventos del buzzer
+
+| Evento | Código / tono | Descripción |
+|---|---|---|
+| Impacto | | |
+| Fallo | | |
+| Barco hundido | | |
+| Colocación inválida | | |
+| Victoria | | |
+
+### Decisiones y justificación
+
+[Explicar la separación en registros y la lógica de control de cada salida.]
+
+---
+
+## 7.7 VGA
+
+### Objetivo
+
+[Describir el objetivo del periférico VGA.]
+
+### Diagrama
+
+![VGA](imagenes/vga_nivel_3.png)
+
+**Figura X. Diagrama de tercer nivel del periférico VGA.**
+
+### Descripción del funcionamiento
+
+[Explicar el flujo desde la memoria de video hasta la generación de las señales VGA.]
+
+### Bloques internos
+
+| Bloque | Función |
+|---|---|
+| Interfaz memory-mapped | |
+| Video RAM | |
+| Generador de timing VGA | |
+| Contador horizontal | |
+| Contador vertical | |
+| Cálculo de tile / posición | |
+| Generador de píxel | |
+| Generador RGB monocromático | |
+
+### Entradas y salidas
+
+| Señal | Dirección | Ancho | Descripción |
+|---|---|---:|---|
+| `clk_i` | Entrada | | |
+| `clk_pixel_i` | Entrada | | |
+| `rst_i` | Entrada | | |
+| `addr_i` | Entrada | | |
+| `wdata_i` | Entrada | | |
+| `write_enable_i` | Entrada | | |
+| `rdata_o` | Salida | | |
+| `vga_red_o` | Salida | | |
+| `vga_green_o` | Salida | | |
+| `vga_blue_o` | Salida | | |
+| `vga_hsync_o` | Salida | | |
+| `vga_vsync_o` | Salida | | |
+
+### Señales internas relevantes
+
+| Señal | Ancho | Descripción |
+|---|---:|---|
+| `h_count` | | |
+| `v_count` | | |
+| `pixel_x` | | |
+| `pixel_y` | | |
+| `video_active` | | |
+| `video_addr` | | |
+| `tile_data` | | |
+| `pixel_on` | | |
+
+### Organización de memoria de video
+
+| Parámetro | Valor |
+|---|---|
+| Resolución VGA | |
+| Frecuencia de refresco | |
+| Reloj de píxel | |
+| Número de tiles | |
+| Tamaño de tile | |
+| Rango de memoria | |
+
+### Temporización VGA
+
+[Agregar parámetros y ecuaciones de sincronización horizontal y vertical.]
+
+### Decisiones y justificación
+
+[Explicar el uso de tiles, salida monocromática y organización de la memoria de video.]
+
+---

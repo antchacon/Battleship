@@ -90,7 +90,7 @@ fundamentales de procesamiento y memoria.
 
 ## 5.2 Diagrama
 
-![Diagrama de primer nivel](imagenes/diagrama_nivel_1.png)
+![Diagrama de primer nivel](https://github.com/antchacon/Battleship/blob/main/Docs/Im%C3%A1genes/Primer%20Nivel.jpg)
 
 **Figura 1. Diagrama de primer nivel del sistema Battleship.**
 
@@ -138,7 +138,7 @@ mostrando las conexiones entre el procesador RISC-V, las memorias y los perifér
 
 ## 6.2 Diagrama
 
-![Diagrama de segundo nivel](imagenes/diagrama_nivel_2.png)
+![Diagrama de segundo nivel](https://github.com/antchacon/Battleship/blob/main/Docs/Im%C3%A1genes/Segundo%20Nivel.jpg)
 
 **Figura 2. Arquitectura de segundo nivel del sistema.**
 
@@ -445,9 +445,9 @@ Recibir las señales provenientes de los botones y switches utilizados por el ju
 
 ### Diagrama
 
-![Entradas Jugador 1](imagenes/jugador1_nivel_3.png)
+![Entradas Jugador 1](https://github.com/antchacon/Battleship/blob/main/Docs/Im%C3%A1genes/Entradas%20Jugador%201.jpeg)
 
-**Figura X. Diagrama de tercer nivel de las entradas del Jugador 1.**
+**Figura 7. Diagrama de tercer nivel de las entradas del Jugador 1.**
 
 ### Funcionamiento
 
@@ -508,9 +508,9 @@ El subsistema de indicadores tiene como objetivo proporcionar retroalimentación
 
 ### Diagrama
 
-![Indicadores](imagenes/indicadores_nivel_3.png)
+![Indicadores](https://github.com/antchacon/Battleship/blob/main/Docs/Im%C3%A1genes/Indicadores.jpg)
 
-**Figura X. Diagrama de tercer nivel del subsistema de indicadores.**
+**Figura 8. Diagrama de tercer nivel del subsistema de indicadores.**
 
 ### Funcionamiento
 
@@ -609,78 +609,79 @@ frecuencia correspondiente.
 
 ### Objetivo
 
-[Describir el objetivo del periférico VGA.]
+Este tiene como objetivo generar la interfaz visual del Jugador 1, mostrando la información necesaria para el desarrollo de la partida, como los tableros, el cursor, el estado de las casillas y la información general del juego.
+
+El módulo recibe desde el procesador RISC-V la información que debe representarse en pantalla mediante una memoria de video mapeada en memoria y se encarga de transformarla en las señales de sincronización y video necesarias para producir una salida VGA de 640x480 píxeles.
 
 ### Diagrama
 
 ![VGA](imagenes/vga_nivel_3.png)
 
-**Figura X. Diagrama de tercer nivel del periférico VGA.**
+**Figura 9. Diagrama de tercer nivel del periférico VGA.**
 
-### Descripción del funcionamiento
+### Funcionamiento
+El periférico VGA utiliza una memoria de video organizada por bloques para almacenar la información que debe mostrarse en pantalla. El procesador RISC-V puede modificar directamente el contenido de esta memoria mediante operaciones de lectura y escritura dentro del rango de direcciones asignado al periférico VGA.
 
-[Explicar el flujo desde la memoria de video hasta la generación de las señales VGA.]
+De forma paralela, el bloque de temporización VGA utiliza el reloj de píxel para generar los contadores horizontal y vertical, a partir de los cuales se obtienen la posición actual del píxel y las señales de sincronización vga_hsync_o y
+vga_vsync_o.
+
+Con base en la posición actual del píxel, el módulo calcula qué bloque de la memoria de video corresponde mostrar y obtiene el dato almacenado para esa posición. Este dato es interpretado por la lógica de generación de imagen para determinar si el píxel debe mostrarse activo o inactivo.
+
+Finalmente, la información del píxel se convierte en las señales RGB que se envían al monitor mediante vga_red_o, vga_green_o y vga_blue_o. En este diseño la salida visual se plantea de forma monocromática, por lo que las tres componentes RGB se controlan de manera equivalente para representar los diferentes elementos del juego.
+
+La operación del acceso del procesador a la memoria de video y la generación continua de la señal VGA se mantienen separadas, permitiendo actualizar el contenido de la pantalla sin interrumpir la temporización requerida por el monitor.
 
 ### Bloques internos
 
 | Bloque | Función |
 |---|---|
-| Interfaz memory-mapped | |
-| Video RAM | |
-| Generador de timing VGA | |
-| Contador horizontal | |
-| Contador vertical | |
-| Cálculo de tile / posición | |
-| Generador de píxel | |
-| Generador RGB monocromático | |
+| Interfaz de memoria mapeada | Permite que el procesador RISC-V lea y escriba el contenido de la memoria de video mediante el rango de direcciones asignado al periférico VGA. |
+| Memoria de video | Almacena la información correspondiente a los bloques que deben mostrarse en pantalla. Cada posición representa el contenido visual de una región de la imagen. |
+| Generador de temporización VGA | Genera la temporización necesaria para una salida VGA de 640 × 480 píxeles a 60 Hz. |
+| Contador horizontal | Lleva el conteo de la posición horizontal actual dentro de la trama VGA. |
+| Contador vertical | Lleva el conteo de la posición vertical actual dentro de la trama VGA. |
+| Cálculo de bloque y posición | Convierte la posición actual del píxel en la dirección correspondiente dentro de la memoria de video. |
+| Generador de píxel | Interpreta el dato leído desde la memoria de video y determina el valor visual que debe mostrarse para el píxel actual. |
+| Generador RGB | Convierte el valor generado para el píxel en las señales vga_red_o, vga_green_o y vga_blue_o. |
 
 ### Entradas y salidas
 
 | Señal | Dirección | Ancho | Descripción |
 |---|---|---:|---|
-| `clk_i` | Entrada | | |
-| `clk_pixel_i` | Entrada | | |
-| `rst_i` | Entrada | | |
-| `addr_i` | Entrada | | |
-| `wdata_i` | Entrada | | |
-| `write_enable_i` | Entrada | | |
-| `rdata_o` | Salida | | |
-| `vga_red_o` | Salida | | |
-| `vga_green_o` | Salida | | |
-| `vga_blue_o` | Salida | | |
-| `vga_hsync_o` | Salida | | |
-| `vga_vsync_o` | Salida | | |
+| `clk_i` | Entrada | 1 bit | Reloj principal del sistema utilizado por la interfaz de acceso a la memoria de video. |
+| `clk_pixel_i` | Entrada | 1 bit | Reloj de píxel de 25 MHz utilizado para generar la temporización de la señal VGA. |
+| `rst_i` | Entrada | 1 bit | Reinicia los contadores y la lógica interna del periférico VGA. |
+| `addr_i[8:0]` | Entrada | 9 bits | Dirección utilizada para seleccionar una posición dentro de la memoria de video. |
+| `wdata_i[31:0]` | Entrada | 32 bits | Dato escrito por el procesador en la posición seleccionada de la memoria de video. |
+| `write_enable_i` | Entrada | 1 bit | Habilita una operación de escritura sobre la memoria de video. |
+| `rdata_o[31:0]` | Salida | 32 bits | Dato leído desde la posición seleccionada de la memoria de video. |
+| `vga_red_o[3:0]` | Salida | 4 bits | Componente roja de la señal de video VGA. |
+| `vga_green_o[3:0]` | Salida | 4 bits | Componente verde de la señal de video VGA. |
+| `vga_blue_o[3:0]` | Salida | 4 bits | Componente azul de la señal de video VGA. |
+| `vga_hsync_o` | Salida | 1 bit | Señal de sincronización horizontal del monitor VGA. |
+| `vga_vsync_o` | Salida | 1 bit | Señal de sincronización vertical del monitor VGA. |
 
-### Señales internas relevantes
-
-| Señal | Ancho | Descripción |
-|---|---:|---|
-| `h_count` | | |
-| `v_count` | | |
-| `pixel_x` | | |
-| `pixel_y` | | |
-| `video_active` | | |
-| `video_addr` | | |
-| `tile_data` | | |
-| `pixel_on` | | |
-
-### Organización de memoria de video
-
+### Organización de la memoria de video
 | Parámetro | Valor |
 |---|---|
-| Resolución VGA | |
-| Frecuencia de refresco | |
-| Reloj de píxel | |
-| Número de tiles | |
-| Tamaño de tile | |
-| Rango de memoria | |
-
-### Temporización VGA
-
-[Agregar parámetros y ecuaciones de sincronización horizontal y vertical.]
+| Resolución VGA | 640 × 480 píxeles |
+| Frecuencia de refresco | 60 Hz |
+| Organización propuesta | 20 × 15 bloques |
+| Tamaño de cada tile | 32 × 32 píxeles |
+| Tamaño de palabra | 32 bits |
+| Dirección inicial | `0x0001_1000` |
+| Dirección final | `0x0001_17FF` |
 
 ### Decisiones y justificación
 
-[Explicar el uso de tiles, salida monocromática y organización de la memoria de video.]
+Se seleccionó una arquitectura basada en bloques. Esta decisión reduce la cantidad de memoria necesaria y disminuye el número de accesos que debe realizar el procesador para actualizar la imagen, ya que cada palabra de memoria representa una región completa de la pantalla y no un único píxel.
 
----
+La memoria de video se mantiene mapeada dentro del espacio de direcciones del procesador, lo que permite que el RISC-V modifique directamente el contenido visual mediante operaciones de lectura y escritura. De esta forma, el software puede actualizar únicamente las posiciones que cambian durante la partida.
+
+La generación de la señal VGA se mantiene separada del acceso realizado por el procesador. Mientras el CPU modifica el contenido de la memoria de video, la lógica VGA utiliza el reloj de píxel para leer continuamente dicha memoria ygenerar las señales de sincronización e imagen requeridas por el monitor.
+
+También se utiliza un reloj de píxel independiente de 25 MHz, derivado del reloj principal de 100 MHz, con el objetivo de cumplir con la temporización requerida para una resolución de 640 × 480 píxeles a 60 Hz.
+
+Finalmente, la representación visual se plantea de forma monocromática para simplificar la lógica de generación de imagen. Los diferentes estados del juego pueden distinguirse mediante patrones, símbolos o combinaciones visuales sin necesidad de implementar una lógica compleja de color.
+
+Esta organización mantiene separadas las funciones de almacenamiento de la imagen, generación de temporización y generación de píxeles, facilitando la implementación, simulación y verificación individual de cada bloque.

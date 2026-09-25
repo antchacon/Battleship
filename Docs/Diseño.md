@@ -183,108 +183,109 @@ simplifica la integración del sistema completo.
 
 ### Objetivo
 
-[Describir el objetivo de la memoria ROM dentro del sistema.]
+La ROM se encarga de almacenar las instrucciones del programa que es ejecutado por el RISC-V y de brindarle por medio de señales de 32 bits las instrucciones correspondientes a la dirección solicitada.
 
 ### Diagrama
 
-![ROM](imagenes/rom_nivel_3.png)
+<img width="1113" height="796" alt="image" src="https://github.com/user-attachments/assets/811ee9a5-45eb-4d30-a078-bcdac1f13e1d" />
 
-**Figura X. Diagrama de tercer nivel de la memoria ROM.**
+
+**Figura 3. Diagrama de tercer nivel de la memoria ROM.**
 
 ### Descripción del funcionamiento
 
-[Explicar el flujo de información dentro del módulo ROM.]
+El módulo ROM recibe una dirección proveniente del procesador RISC-V, la cual indica la posición de memoria que debe ser consultada y la ROM solicita la información almacenada en dicha posición. Cada salida tiene un ancho de 32 bits y estas instrucciones son enviadas al RISC-V el cuál las utiliza para la decodificación y ejecución del programa.
 
 ### Bloques internos
 
 | Bloque | Función |
 |---|---|
-| Conversión de dirección a índice | |
-| Memoria de programa | |
-| Inicialización | |
+| Conversión de dirección a índice | Utiliza la señal recibida  del procesador y la utiliza para convertir y acceder a una posición especifica de la ROM|
+| Memoria de programa | Almacena las instrucciones de 32 bits que le dan sentido al programa y que después deberá enviar al procesador RISC-V|
+| Inicialización | Carga las instrucciones que estarán almacenadas en la ROM antes de la ejecución del programa|
 
 ### Entradas y salidas
 
 | Señal | Dirección | Ancho | Descripción |
 |---|---|---:|---|
-| `prog_address_i` | Entrada | | |
-| `prog_instr_o` | Salida | | |
-| `clk_i` | Entrada | | |
-| `rst_i` | Entrada | | |
+| `prog_address_i` | Entrada |32 bits |Posición de la instrucción que se desea consultar |
+| `prog_instr_o` | Salida |32 bits| Devuelve la instrucción almacenada en la posición consultada |
+| `clk_i` | Entrada |1 bit |Sincroniza el modulo con el resto del sistema |
+| `rst_i` | Entrada |1 biot |Señal de reinicio del sistema |
 
 ### Señales internas relevantes
 
-| Señal | Ancho | Descripción |
-|---|---:|---|
-| | | |
+| Señal | Descripción |
+|---|---|
+| Indice de memmoria|Posición interna de la ROM que corresponde a la dirección recibida mediante prog_address_i. |
 
 ### Organización de memoria
 
-[Indicar rango de direcciones, ancho de palabra, profundidad y forma de inicialización.]
-
+Las direcciones tienen un rango de 32 bits  ya que almacena una dirección completa del procesador. La dirección recibida mediante prog_address_i se convierte en un índice que permite seleccionar la posición correspondiente dentro de la memoria.
+Debido a que las instrucciones del procesador tienen un tamaño de 32 bits, estas se encuentran alineadas en memoria. Por esta razón, la dirección proporcionada por el procesador debe ser adaptada antes de utilizarse como índice interno de la ROM.
+El contenido de la memoria se define durante la inicialización del sistema y permanece sin modificaciones durante la ejecución del programa, ya que el procesador únicamente realiza operaciones de lectura sobre esta memoria.
 ### Decisiones y justificación
 
-[Explicar las decisiones tomadas para la arquitectura de la ROM.]
-
----
-
+Las ROM almacena palabras de 32 bits ya que corresponde al ancho de las instrucciones que se utilizan en RISC_V. Y se utiliza una memoria que solo tenga acceso de lectura para evitar modificaciones indeseadas durante la ejecución del programa.
 ## 7.2 Memoria RAM
 
 ### Objetivo
 
-[Describir el objetivo de la RAM dentro del sistema.]
+La memoria RAM se encarga de almacenar temporalmente los datos correspondientes a cada partida durante la ejecución del juego. Estos datos pueden ser leídos o modificados por el procesador RISC-V-
 
 ### Diagrama
 
-![RAM](imagenes/ram_nivel_3.png)
+<img width="1335" height="808" alt="image" src="https://github.com/user-attachments/assets/2bfac7df-2884-4a6f-b193-b63cd6c508c4" />
 
-**Figura X. Diagrama de tercer nivel de la memoria RAM.**
+
+**Figura 4. Diagrama de tercer nivel de la memoria RAM.**
 
 ### Descripción del funcionamiento
 
-[Explicar los caminos de lectura y escritura de la RAM.]
+Recibe desde el RISC_V una dirección de la memoria que no solamente se puede consultar sino también modificar si se solicita. Durante una escritura, el dato recibido mediante wdata_i se almacena en la posición indicada por addr_i. Para una lectura, la RAM obtiene el contenido almacenado en la dirección seleccionada y lo entrega al procesador mediante rdata_o.
 
 ### Bloques internos
 
 | Bloque | Función |
 |---|---|
-| Conversión de dirección a índice | |
-| Lógica de escritura | |
-| Memoria RAM | |
-| Buffer de lectura | |
+| Conversión de dirección a índice | Convierte la dirección addr_i en el indice que se utiliza para acceder a una posición de la memoria RAM|
+| Lógica de escritura | Controla cuando almacenar un dato seg+un lo indique la señal write_enable_i|
+| Memoria RAM | Almacena temporalmente los datos correspondientes a cada partida|
+| Buffer de lectura | Entrega por medio de rdata_o el dato almacenado en la posición de memoria solicitada|
 
 ### Entradas y salidas
 
 | Señal | Dirección | Ancho | Descripción |
 |---|---|---:|---|
-| `addr_i` | Entrada | | |
-| `wdata_i` | Entrada | | |
-| `write_enable_i` | Entrada | | |
-| `rdata_o` | Salida | | |
-| `clk_i` | Entrada | | |
-| `rst_i` | Entrada | | |
+| `addr_i` | Entrada | 32 bits| Posición de la memoria por consultar o modificar|
+| `wdata_i` | Entrada | 32 bits| Dato a almacenar durante la operación de escritura|
+| `write_enable_i` | Entrada | 1 bit| Habilita la escritura de wdata_i en la posición indicada por addr_i.|
+| `rdata_o` | Salida | 32 bits | Dato leído en la posición de memoria solicitada|
+| `clk_i` | Entrada | 1 bit| Sincroniza las operaciones de la memoria|
+| `rst_i` | Entrada | 1 bit| Señal de inicio para llevar el modulo a su condición inicial|
 
 ### Señales internas relevantes
 
-| Señal | Ancho | Descripción |
-|---|---:|---|
-| | | |
+| Señal  | Descripción |
+|---|---|
+|Indice de memkoria | Posicion interna de la RAM solicitada por addr_i |
+| Memoria interna| Contiene los datos almacenados durante la partida|
 
 ### Organización de datos en RAM
 
-| Región | Información almacenada | Tamaño | Dirección / índice |
-|---|---|---:|---|
-| Tablero Jugador 1 | | | |
-| Tablero Jugador 2 | | | |
-| Estado de barcos J1 | | | |
-| Estado de barcos J2 | | | |
-| Turno actual | | | |
-| Contadores | | | |
-| Variables auxiliares | | | |
+| Región | Información almacenada |
+|---|---|
+| Tablero Jugador 1 | Posiciones de los barcos del jugador 1| 
+| Tablero Jugador 2 | Posiciones de los barcos del jugador 1| 
+| Estado de barcos J1 | Estado de los barcos pertenecientes al jugador 1| 
+| Estado de barcos J2 | Estado de los barcos pertenecientes al jugador 2| 
+| Turno actual |Determina el turno del jugador | 
+| Contadores |Llevar el control de distintos eventos, como la cantidad de barcos o aciertos y desaciertos | 
+| Variables auxiliares | Información temporal necesaria para la ejecución de la lógica del juego| 
 
 ### Decisiones y justificación
 
-[Explicar la organización elegida para la RAM y los datos del juego.]
+Se utiliza una memoria sobre la cuál se pueda modificar la información debido a que contiene información variable necesaria para el funcionamiento de cada partida. Se utilizan diferentes regiones de memoria para separar distintas funciones del juego de manera que se facilite mantener de forma ordenada el estado actual de la partida
 
 ---
 
@@ -292,77 +293,76 @@ simplifica la integración del sistema completo.
 
 ### Objetivo
 
-[Describir el objetivo del bloque de interconexión.]
-
+Su funcion es dirigir las operaciones de lectura y escritura del procesador RISC-V hacia el módulo correspondiente del sistema según la dirección utilizada.A partir de la dirección generada por el procesador, este bloque determina si el acceso corresponde a la memoria RAM, a algún periférico o a otra región del sistema.
 ### Diagrama
 
-![Mapeo de memoria](imagenes/mapeo_memoria_nivel_3.png)
+<img width="1489" height="753" alt="image" src="https://github.com/user-attachments/assets/4cba836a-c651-45c8-b58b-c367c3521b6a" />
 
-**Figura X. Diagrama de tercer nivel de la interconexión y mapeo de memoria.**
+
+**Figura 5. Diagrama de tercer nivel de la interconexión y mapeo de memoria.**
 
 ### Descripción del funcionamiento
 
-[Explicar cómo se realizan las operaciones de lectura y escritura entre CPU,
-RAM y periféricos.]
+El bloque de interconexión recibe desde el procesador RISC-V la dirección de acceso, el dato que se desea escribir y la señal que indica si la operación corresponde a una escritura.
+A partir de data_address_i, el decodificador de direcciones determina qué dispositivo o región del sistema debe ser seleccionado. Para una operación de escritura, el bloque genera la señal de habilitación correspondiente al dispositivo seleccionado y envía el dato recibido mediante data_out_i.
+En una operación de lectura, el periférico o memoria seleccionada entrega su dato al bloque de interconexión. Posteriormente, el multiplexor de lectura selecciona la información proveniente del dispositivo correspondiente y la envía nuevamente al procesador mediante data_in_o.
 
 ### Bloques internos
 
 | Bloque | Función |
 |---|---|
-| Decodificador de direcciones | |
-| Decodificador de escritura | |
-| Multiplexor de lectura | |
+| Decodificador de direcciones |Analiza data_address_i y determina qué memoria o periférico debe ser seleccionado según el rango de direcciones asignado.|
+| Decodificador de escritura |Genera la señal de habilitación de escritura correspondiente.|
+| Multiplexor de lectura |Selecciona el dato proveniente del dispositivo activo y lo envía al procesador mediante data_in_o. |
 
 ### Entradas y salidas
 
 | Señal | Dirección | Ancho | Descripción |
 |---|---|---:|---|
-| `data_address_i` | Entrada | | |
-| `data_out_i` | Entrada | | |
-| `data_we_i` | Entrada | | |
-| `data_in_o` | Salida | | |
+| `data_address_i` | Entrada |32 bits |Dirección generada por el procesador para seleccionar una región de memoria o un periférico. |
+| `data_out_i` | Entrada | 32 bits| Dato a escribir|
+| `data_we_i` | Entrada | 1 bit| Indica una operación de escritura|
+| `data_in_o` | Salida | 1 bit|Dato obtenido del dispositivo seleccionado y enviado nuevamente al procesador. |
 | | | | |
 
 ### Señales de selección
 
 | Señal | Dispositivo |
 |---|---|
-| `sel_ram` | |
-| `sel_uart` | |
-| `sel_vga` | |
-| `sel_j1` | |
-| `sel_ind` | |
+| `sel_ram` | Selecciona la RAM|
+| `sel_uart` |Selecciona la UART |
+| `sel_vga` | Selecciona el modulo VGA|
+| `sel_j1` | Selecciona las entradas del jugador 1|
+| `sel_ind` | Selecciona las entradas del jugador 2|
 
 ### Señales de escritura
 
 | Señal | Dispositivo |
 |---|---|
-| `we_ram` | |
-| `we_uart` | |
-| `we_vga` | |
-| `we_j1` | |
-| `we_ind` | |
+| `we_ram` |Habilita escritura en la RAM |
+| `we_uart` | Habilita escritura en la UART |
+| `we_vga` | |Habilita escritura en el modulo VGA |
+| `we_j1` | Habilita la escritura asociada al bloque del jugador 1|
+| `we_ind` | Habilita escritura en el modulo0 de indicadores |
 
 ### Mapa de memoria
 
-| Dispositivo / región | Dirección inicial | Dirección final | Uso |
-|---|---:|---:|---|
-| ROM | | | |
-| RAM | | | |
-| UART | | | |
-| VGA | | | |
-| Entradas Jugador 1 | | | |
-| Indicadores | | | |
+| Dispositivo / región |  Uso |
+|---|---:|
+| ROM | Almacenamiento de las instrucciones ejecutadas por el procesador.| 
+| RAM | Almacenamiento temporal durante cada partida | 
+| UART | Comunicación entre FPGA y otros dispositivos| 
+| VGA | Control de información enviada al sistema de visualización VGA| 
+| Entradas Jugador 1 | Lectura del estado de las entradas utilizadas por el jugador 1.|
+| Indicadores | Control de señales de salida para mostrar estados o información del juego| 
 
 ### Decodificación
 
-[Agregar las condiciones o ecuaciones utilizadas para generar las señales de
-selección y escritura.]
+La decodificación de direcciones se realiza comparando data_address_i con los rangos asignados a cada dispositivo del sistema. Cuando la dirección se encuentra dentro del rango correspondiente a un módulo, se activa su señal de selección. Para las operaciones de escritura, la señal de selección se combina con data_we_i
 
 ### Decisiones y justificación
 
-[Explicar por qué se utiliza memoria mapeada y cómo se organiza la interconexión.]
-
+Se utiliza un esquema de memoria mapeada debido a que permite que el procesador RISC-V acceda tanto a la memoria RAM como a los diferentes periféricos utilizando las mismas operaciones de lectura y escritura empleadas para acceder a memoria. Cada dispositivo posee un rango de direcciones específico dentro del espacio de memoria del sistema. De esta manera, el procesador únicamente necesita generar una dirección para indicar con qué componente desea comunicarse. Esta organización simplifica la comunicación entre el procesador, la memoria y los periféricos.
 ---
 
 ## 7.4 UART

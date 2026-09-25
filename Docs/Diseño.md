@@ -19,7 +19,7 @@ Anthony Fabián Chacón Montero 2022117452
 El objetivo de este documento es definir una arquitectura preliminar para implementar el juego de Batalla Naval sobre una FPGA (Basys 3) 
 utilizando un procesador RISC-V de 32 bits.
 
-El diseño se establece siguiendo una metodología modular y jerárquica, partiendo de una representación general del sistema y diviendo en
+El diseño se establece siguiendo una metodología modular y jerárquica, partiendo de una representación general del sistema y dividiendo en
 subsistemas hasta obtener bloques funcionales definidos para su posterior implementación en SystemVerilog.
 
 
@@ -113,7 +113,7 @@ la ROM y la RAM.
 
 ## 5.4 Justificación
 
-La lógica del juego se encuentra centada en el procesador RISC-V, de modo que las condiciones
+La lógica del juego se encuentra centrada en el procesador RISC-V, de modo que las condiciones
 del juego como la colocación de barcos, validación de disparos, control de turnos, detección 
 de impactos, barcos hundidos y estado de victoria o derrota, se implementan mediante software 
 en ensamblador. 
@@ -149,11 +149,11 @@ mostrando las conexiones entre el procesador RISC-V, las memorias y los perifér
 | Procesamiento RISC-V | Ejecutar el programa del juego | Ejecuta las instrucciones almacenadas en la ROM y controla la lógica del juego, incluyendo colocación de barcos, validación de posiciones, manejo de turnos, procesamiento de disparos, detección de impactos, barcos hundidos y condición de victoria. Realiza operaciones de lectura y escritura sobre RAM y periféricos. |
 | ROM | Almacenar las instrucciones | Contiene las instrucciones de 32 bits que forman el programa en ensamblador ejecutado por el procesador RISC-V. El CPU proporciona una dirección de programa y la ROM devuelve la instrucción correspondiente. |
 | RAM | Almacenar datos variables | Guarda la información que cambia durante la ejecución, como los tableros de ambos jugadores, posiciones de barcos, estado de casillas, turno actual, barcos hundidos, contadores y otras variables utilizadas por el programa. |
-| Interconexión y mapeo de memoria | Comunicar el procesador con RAM y periféricos | Analiza la dirección generada por el procesador para determinar que dispositivo debe ser accedido. Genera las señales de selección y escritura correspondientes y selecciona el dato que debe regresar al CPU durante una operacion de lectura. |
-| Entradas Jugador 1 | Leer los controles físicos del jugador local | Recibe los 5 botones y switches utilizados por el jugador 1. Las señales son sincronizadas y los botones pasan por un proceso de eliminacion de rebotes.|
+| Interconexión y mapeo de memoria | Comunicar el procesador con RAM y periféricos | Analiza la dirección generada por el procesador para determinar que dispositivo debe ser accedido. Genera las señales de selección y escritura correspondientes y selecciona el dato que debe regresar al CPU durante una operación de lectura. |
+| Entradas Jugador 1 | Leer los controles físicos del jugador local | Recibe los 5 botones y switches utilizados por el jugador 1. Las señales son sincronizadas y los botones pasan por un proceso de eliminación de rebotes.|
 | UART | Comunicar FPGA y PC | Canal de comunicación con el jugador 2. Recibe desde la PC información de colocación de barcos y disparos, y transmite hacia la aplicación información sobre aceptación de posiciones, resultados de disparos, cambios de turno y el resultado de la partida. |
-| VGA | Generar la interfaz visual del Jugador 1 | Produce las señales necesarias para mostrar en el monitor el tablero propio, el estado conocido del tablero rival, el cursor y la informacion relevante de la partida.|
-| Indicadores | Controlar displays, LED y buzzer | Agrupa los displays de siete segmentos, LED y buzzer. Los displays muestran información como las victorias acumuladas, el LED indica estados o fases de la partida y el buzzer genera sonidos diferentes de impacto, fallo, barco hundido, colocación invalida y fin de partida. |
+| VGA | Generar la interfaz visual del Jugador 1 | Produce las señales necesarias para mostrar en el monitor el tablero propio, el estado conocido del tablero rival, el cursor y la información relevante de la partida.|
+| Indicadores | Controlar displays, LED y buzzer | Agrupa los displays de siete segmentos, LED y buzzer. Los displays muestran información como las victorias acumuladas, el LED indica estados o fases de la partida y el buzzer genera sonidos diferentes de impacto, fallo, barco hundido, colocación inválida y fin de partida. |
 
 ## 6.4 Justificación
 
@@ -164,20 +164,8 @@ simplifica la integración del sistema completo.
 ---
 
 # 7. Diseño de tercer nivel
-
-## 7.1 Objetivo
-
-
-
-- diagrama,
-- descripción del funcionamiento,
-- bloques internos,
-- entradas y salidas,
-- señales internas relevantes,
-- decisiones de diseño,
-- justificación.
-
----
+### Objetivo 
+El objetivo del diseño de tercer nivel es descomponer cada subsistema identificado en el segundo nivel en bloques funcionales más específicos, definiendo sus interfaces, señales y relaciones de funcionamiento para facilitar su posterior implementación, simulación e integración en SystemVerilog.
 
 ## 7.1 Memoria ROM
 
@@ -200,7 +188,7 @@ El módulo ROM recibe una dirección proveniente del procesador RISC-V, la cual 
 
 | Bloque | Función |
 |---|---|
-| Conversión de dirección a índice | Utiliza la señal recibida  del procesador y la utiliza para convertir y acceder a una posición especifica de la ROM|
+| Conversión de dirección a índice | Utiliza la señal recibida  del procesador y la utiliza para convertir y acceder a una posición específica de la ROM|
 | Memoria de programa | Almacena las instrucciones de 32 bits que le dan sentido al programa y que después deberá enviar al procesador RISC-V|
 | Inicialización | Carga las instrucciones que estarán almacenadas en la ROM antes de la ejecución del programa|
 
@@ -210,14 +198,14 @@ El módulo ROM recibe una dirección proveniente del procesador RISC-V, la cual 
 |---|---|---:|---|
 | `prog_address_i` | Entrada |32 bits |Posición de la instrucción que se desea consultar |
 | `prog_instr_o` | Salida |32 bits| Devuelve la instrucción almacenada en la posición consultada |
-| `clk_i` | Entrada |1 bit |Sincroniza el modulo con el resto del sistema |
-| `rst_i` | Entrada |1 biot |Señal de reinicio del sistema |
+| `clk_i` | Entrada |1 bit |Sincroniza el módulo con el resto del sistema |
+| `rst_i` | Entrada |1 bit |Señal de reinicio del sistema |
 
 ### Señales internas relevantes
 
 | Señal | Descripción |
 |---|---|
-| Indice de memmoria|Posición interna de la ROM que corresponde a la dirección recibida mediante prog_address_i. |
+| Índice de memoria|Posición interna de la ROM que corresponde a la dirección recibida mediante prog_address_i. |
 
 ### Organización de memoria
 
@@ -226,12 +214,12 @@ Debido a que las instrucciones del procesador tienen un tamaño de 32 bits, esta
 El contenido de la memoria se define durante la inicialización del sistema y permanece sin modificaciones durante la ejecución del programa, ya que el procesador únicamente realiza operaciones de lectura sobre esta memoria.
 ### Decisiones y justificación
 
-Las ROM almacena palabras de 32 bits ya que corresponde al ancho de las instrucciones que se utilizan en RISC_V. Y se utiliza una memoria que solo tenga acceso de lectura para evitar modificaciones indeseadas durante la ejecución del programa.
+La ROM almacena palabras de 32 bits ya que corresponde al ancho de las instrucciones que se utilizan en RISC_V. Y se utiliza una memoria que solo tenga acceso de lectura para evitar modificaciones indeseadas durante la ejecución del programa.
 ## 7.2 Memoria RAM
 
 ### Objetivo
 
-La memoria RAM se encarga de almacenar temporalmente los datos correspondientes a cada partida durante la ejecución del juego. Estos datos pueden ser leídos o modificados por el procesador RISC-V-
+La memoria RAM se encarga de almacenar temporalmente los datos correspondientes a cada partida durante la ejecución del juego. Estos datos pueden ser leídos o modificados por el procesador RISC-V
 
 ### Diagrama
 
@@ -242,14 +230,14 @@ La memoria RAM se encarga de almacenar temporalmente los datos correspondientes 
 
 ### Descripción del funcionamiento
 
-Recibe desde el RISC_V una dirección de la memoria que no solamente se puede consultar sino también modificar si se solicita. Durante una escritura, el dato recibido mediante wdata_i se almacena en la posición indicada por addr_i. Para una lectura, la RAM obtiene el contenido almacenado en la dirección seleccionada y lo entrega al procesador mediante rdata_o.
+Recibe desde el RISC-V una dirección de la memoria que no solamente se puede consultar sino también modificar si se solicita. Durante una escritura, el dato recibido mediante wdata_i se almacena en la posición indicada por addr_i. Para una lectura, la RAM obtiene el contenido almacenado en la dirección seleccionada y lo entrega al procesador mediante rdata_o.
 
 ### Bloques internos
 
 | Bloque | Función |
 |---|---|
-| Conversión de dirección a índice | Convierte la dirección addr_i en el indice que se utiliza para acceder a una posición de la memoria RAM|
-| Lógica de escritura | Controla cuando almacenar un dato seg+un lo indique la señal write_enable_i|
+| Conversión de dirección a índice | Convierte la dirección addr_i en el Índice que se utiliza para acceder a una posición de la memoria RAM|
+| Lógica de escritura | Controla cuando almacenar un dato según lo indique la señal write_enable_i|
 | Memoria RAM | Almacena temporalmente los datos correspondientes a cada partida|
 | Buffer de lectura | Entrega por medio de rdata_o el dato almacenado en la posición de memoria solicitada|
 
@@ -262,13 +250,13 @@ Recibe desde el RISC_V una dirección de la memoria que no solamente se puede co
 | `write_enable_i` | Entrada | 1 bit| Habilita la escritura de wdata_i en la posición indicada por addr_i.|
 | `rdata_o` | Salida | 32 bits | Dato leído en la posición de memoria solicitada|
 | `clk_i` | Entrada | 1 bit| Sincroniza las operaciones de la memoria|
-| `rst_i` | Entrada | 1 bit| Señal de inicio para llevar el modulo a su condición inicial|
+| `rst_i` | Entrada | 1 bit| Señal de inicio para llevar el módulo a su condición inicial|
 
 ### Señales internas relevantes
 
 | Señal  | Descripción |
 |---|---|
-|Indice de memkoria | Posicion interna de la RAM solicitada por addr_i |
+|Índice de memoria | Posición interna de la RAM solicitada por addr_i |
 | Memoria interna| Contiene los datos almacenados durante la partida|
 
 ### Organización de datos en RAM
@@ -276,7 +264,7 @@ Recibe desde el RISC_V una dirección de la memoria que no solamente se puede co
 | Región | Información almacenada |
 |---|---|
 | Tablero Jugador 1 | Posiciones de los barcos del jugador 1| 
-| Tablero Jugador 2 | Posiciones de los barcos del jugador 1| 
+| Tablero Jugador 2 | Posiciones de los barcos del jugador 2| 
 | Estado de barcos J1 | Estado de los barcos pertenecientes al jugador 1| 
 | Estado de barcos J2 | Estado de los barcos pertenecientes al jugador 2| 
 | Turno actual |Determina el turno del jugador | 
@@ -293,7 +281,7 @@ Se utiliza una memoria sobre la cuál se pueda modificar la información debido 
 
 ### Objetivo
 
-Su funcion es dirigir las operaciones de lectura y escritura del procesador RISC-V hacia el módulo correspondiente del sistema según la dirección utilizada.A partir de la dirección generada por el procesador, este bloque determina si el acceso corresponde a la memoria RAM, a algún periférico o a otra región del sistema.
+Su función es dirigir las operaciones de lectura y escritura del procesador RISC-V hacia el módulo correspondiente del sistema según la dirección utilizada. A partir de la dirección generada por el procesador, este bloque determina si el acceso corresponde a la memoria RAM, a algún periférico o a otra región del sistema.
 ### Diagrama
 
 <img width="1489" height="753" alt="image" src="https://github.com/user-attachments/assets/4cba836a-c651-45c8-b58b-c367c3521b6a" />
@@ -322,7 +310,7 @@ En una operación de lectura, el periférico o memoria seleccionada entrega su d
 | `data_address_i` | Entrada |32 bits |Dirección generada por el procesador para seleccionar una región de memoria o un periférico. |
 | `data_out_i` | Entrada | 32 bits| Dato a escribir|
 | `data_we_i` | Entrada | 1 bit| Indica una operación de escritura|
-| `data_in_o` | Salida | 1 bit|Dato obtenido del dispositivo seleccionado y enviado nuevamente al procesador. |
+| `data_in_o` | Salida | 32 bits|Dato obtenido del dispositivo seleccionado y enviado nuevamente al procesador. |
 | | | | |
 
 ### Señales de selección
@@ -331,9 +319,9 @@ En una operación de lectura, el periférico o memoria seleccionada entrega su d
 |---|---|
 | `sel_ram` | Selecciona la RAM|
 | `sel_uart` |Selecciona la UART |
-| `sel_vga` | Selecciona el modulo VGA|
+| `sel_vga` | Selecciona el módulo VGA|
 | `sel_j1` | Selecciona las entradas del jugador 1|
-| `sel_ind` | Selecciona las entradas del jugador 2|
+| `sel_ind` | Selecciona el módulo de indicadores|
 
 ### Señales de escritura
 
@@ -341,9 +329,9 @@ En una operación de lectura, el periférico o memoria seleccionada entrega su d
 |---|---|
 | `we_ram` |Habilita escritura en la RAM |
 | `we_uart` | Habilita escritura en la UART |
-| `we_vga` | |Habilita escritura en el modulo VGA |
+| `we_vga` | Habilita escritura en el modulo VGA |
 | `we_j1` | Habilita la escritura asociada al bloque del jugador 1|
-| `we_ind` | Habilita escritura en el modulo0 de indicadores |
+| `we_ind` | Habilita escritura en el módulo de indicadores |
 
 ### Mapa de memoria
 
@@ -377,19 +365,20 @@ Permite la comunicación entre el procesador RISC-V y los dispositivos externos.
 <img width="891" height="678" alt="image" src="https://github.com/user-attachments/assets/3ee592d2-9cad-41e3-a75b-e81cc1a0e41a" />
 
 
-**Figura 5. Diagrama de tercer nivel del periférico UART.**
+**Figura 6. Diagrama de tercer nivel del periférico UART.**
 
 ### Descripción del funcionamiento
 
 Camino RX: Este recibe los datos seriales provenientes de un dispositivo externo mediante la línea RX. El módulo UART interpreta la secuencia de bits recibida, reconstruye el dato correspondiente y lo almacena temporalmente para que pueda ser leído posteriormente por el procesador.
-Camino TX: Este es el camino de transmisión y se encarga de enviar datos desde el sistema hacia un dispositivo externo.l procesador proporciona el dato que desea transmitir y el periférico UART lo convierte en una secuencia serial.
+Camino TX: Este es el camino de transmisión y se encarga de enviar datos desde el sistema hacia un dispositivo externo. El procesador proporciona el dato que desea transmitir y el periférico UART lo convierte en una secuencia serial.
 Acceso desde el CPU: El procesador RISC-V accede al periférico UART mediante el sistema de memoria mapeada. Dependiendo de la dirección utilizada, el procesador puede leer los datos recibidos por el camino RX o escribir un nuevo dato que será enviado mediante el camino TX.
+Para este sistema se utiliza una velocidad de comunicación de 115200 baudios.
 
 ### Bloques internos
 
 | Bloque | Función |
 |---|---|
-| Generador de baudrate | Genera la señal de temporización utilizada por los modulos de transmisión y recepción para mantener la velocidad configurada de la comunicación UART.|
+| Generador de baudrate | Genera la señal de temporización utilizada por los módulos de transmisión y recepción para mantener la velocidad configurada de la comunicación UART.|
 | UART RX |Recibe la información serial proveniente de uart_rx_i y reconstruye el dato recibido. |
 | Registro RX | Almacena temporalmente el último dato recibido|
 | Registro de estado | Mantiene información sobre el estado del periférico|
@@ -404,11 +393,11 @@ Acceso desde el CPU: El procesador RISC-V accede al periférico UART mediante el
 |---|---|---:|---|
 | `uart_rx_i` | Entrada | 1 bit|Línea serial utilizada para recibir datos desde un dispositivo externo |
 | `uart_tx_o` | Salida |1 bit |Línea serial utilizada para transmitir datos hacia un dispositivo externo. |
-| `addr_i` | Entrada | 32 bits|dirección utilizada para seleccionar uno de los registros internos del periférico UART. |
+| `addr_i` | Entrada | 2 bits|dirección utilizada para seleccionar uno de los registros internos del periférico UART. |
 | `wdata_i` | Entrada |32 bits | Dato que se envía durante la operación de escritura|
-| `write_enable_i` | Entrada | 1 bit| Habilita la operacion de escritura|
+| `write_enable_i` | Entrada | 1 bit| Habilita la operación de escritura|
 | `rdata_o` | Salida |32 bits |Dato seleccionado desde los registros internos que se envía al procesador |
-| `clk_i` | Entrada |1 bit | Sincroniza el funcionamiento del periferico |
+| `clk_i` | Entrada |1 bit | Sincroniza el funcionamiento del periférico |
 | `rst_i` | Entrada | 1 bit| Reinicia el periferico UART y registros internos|
 
 ### Señales internas relevantes
@@ -420,7 +409,7 @@ Acceso desde el CPU: El procesador RISC-V accede al periférico UART mediante el
 | `rx_ready` |1 bit | Indica que se ha recibido un nuevo dato válido y que se encuentra disponible para el procesador|
 | `tx_data` | 8 bits| Dato que será transmitido por el módulo UART TX|
 | `tx_busy` | 1 bit|Indica que el módulo de transmisión se encuentra enviando un dato. |
-| `tx_done` | 1 bit| GTransmisión de dato finalizada|
+| `tx_done` | 1 bit| Transmisión de dato finalizada|
 | `tx_we` | 1 bit| Habilita la carga de un nuevo dato |
 
 ### Registros internos
@@ -627,7 +616,7 @@ frecuencia correspondiente.
 
 Este tiene como objetivo generar la interfaz visual del Jugador 1, mostrando la información necesaria para el desarrollo de la partida, como los tableros, el cursor, el estado de las casillas y la información general del juego.
 
-El módulo recibe desde el procesador RISC-V la información que debe representarse en pantalla mediante una memoria de video mapeada en memoria y se encarga de transformarla en las señales de sincronización y video necesarias para producir una salida VGA de 640x480 píxeles.
+El módulo recibe desde el procesador RISC-V la información que debe representarse en pantalla mediante una memoria de video mapeada en memoria y se encarga de transformarla en las señales de sincronización y video necesarias para producir una salida VGA de 640 x 480 píxeles.
 
 ### Diagrama
 
@@ -646,6 +635,9 @@ Con base en la posición actual del píxel, el módulo calcula qué bloque de la
 Finalmente, la información del píxel se convierte en las señales RGB que se envían al monitor mediante vga_red_o, vga_green_o y vga_blue_o. En este diseño la salida visual se plantea de forma monocromática, por lo que las tres componentes RGB se controlan de manera equivalente para representar los diferentes elementos del juego.
 
 La operación del acceso del procesador a la memoria de video y la generación continua de la señal VGA se mantienen separadas, permitiendo actualizar el contenido de la pantalla sin interrumpir la temporización requerida por el monitor.
+
+La memoria de video se implementa como una memoria de doble puerto. El primer puerto se encuentra sincronizado con clk_i y permite al procesador realizar operaciones de lectura y escritura. El segundo puerto es de solo lectura, se encuentra sincronizado con clk_pixel_i y es utilizado continuamente por la lógica de generación VGA.
+
 
 ### Bloques internos
 
@@ -694,10 +686,267 @@ Se seleccionó una arquitectura basada en bloques. Esta decisión reduce la cant
 
 La memoria de video se mantiene mapeada dentro del espacio de direcciones del procesador, lo que permite que el RISC-V modifique directamente el contenido visual mediante operaciones de lectura y escritura. De esta forma, el software puede actualizar únicamente las posiciones que cambian durante la partida.
 
-La generación de la señal VGA se mantiene separada del acceso realizado por el procesador. Mientras el CPU modifica el contenido de la memoria de video, la lógica VGA utiliza el reloj de píxel para leer continuamente dicha memoria ygenerar las señales de sincronización e imagen requeridas por el monitor.
+La generación de la señal VGA se mantiene separada del acceso realizado por el procesador. Mientras el CPU modifica el contenido de la memoria de video, la lógica VGA utiliza el reloj de píxel para leer continuamente dicha memoria y generar las señales de sincronización e imagen requeridas por el monitor.
 
 También se utiliza un reloj de píxel independiente de 25 MHz, derivado del reloj principal de 100 MHz, con el objetivo de cumplir con la temporización requerida para una resolución de 640 × 480 píxeles a 60 Hz.
 
 Finalmente, la representación visual se plantea de forma monocromática para simplificar la lógica de generación de imagen. Los diferentes estados del juego pueden distinguirse mediante patrones, símbolos o combinaciones visuales sin necesidad de implementar una lógica compleja de color.
 
 Esta organización mantiene separadas las funciones de almacenamiento de la imagen, generación de temporización y generación de píxeles, facilitando la implementación, simulación y verificación individual de cada bloque.
+
+---
+
+# 8. Flujo general del juego
+
+## 8.1 Objetivo
+
+El objetivo del flujo general es representar la secuencia de operaciones que
+debe ejecutar el sistema desde el inicio de una partida hasta la determinación
+del jugador ganador.
+
+La lógica de control del juego se ejecuta mediante el programa en ensamblador
+sobre el procesador RISC-V, mientras que los periféricos se utilizan para
+recibir entradas, mostrar información y comunicarse con el Jugador 2.
+
+## 8.2 Diagrama de flujo
+
+![Flujo general del juego](imagenes/flujo_juego.png)
+
+**Figura 10. Flujo general de ejecución del juego Battleship.**
+
+## 8.3 Descripción del flujo
+
+Al iniciar el sistema o solicitar un reinicio de la partida, se ejecuta una
+etapa de inicialización en la cual se preparan las variables, tableros,
+periféricos e indicadores necesarios para comenzar una nueva partida.
+
+Posteriormente se inicia la fase de colocación de barcos. El Jugador 1 coloca
+sus tres barcos utilizando los controles físicos de la FPGA, mientras que el
+Jugador 2 realiza su colocación mediante la aplicación de PC y la comunicación
+UART.
+
+Las posiciones propuestas por cada jugador son verificadas antes de ser
+aceptadas. Una colocación inválida debe ser rechazada y el jugador debe
+seleccionar una nueva posición. La fase de colocación finaliza únicamente
+cuando ambos jugadores han colocado correctamente sus tres barcos.
+
+Una vez completada esta etapa comienza la fase de batalla. El sistema indica
+qué jugador posee el turno y espera que este seleccione una posición de
+disparo. Si la posición seleccionada no es válida o ya fue utilizada
+anteriormente, la entrada se rechaza y el jugador debe seleccionar una nueva
+casilla sin perder el turno.
+
+Cuando el disparo es válido, el sistema determina si corresponde a un impacto
+o a un fallo, actualiza la información almacenada en RAM y notifica el
+resultado utilizando los periféricos correspondientes.
+
+Después de cada disparo válido se verifica si todos los barcos del jugador
+rival han sido hundidos. Si aún existen barcos activos, el turno cambia al
+otro jugador y el ciclo continúa.
+
+Cuando todos los barcos de uno de los jugadores han sido hundidos, el sistema
+determina el ganador, muestra el resultado de la partida, genera la
+retroalimentación correspondiente y actualiza el contador acumulado de
+victorias.
+
+---
+
+# 9. Decisiones generales de diseño
+
+La arquitectura del sistema se desarrolló utilizando una metodología modular y
+jerárquica, separando el procesamiento, las memorias y los periféricos en
+subsistemas independientes.
+
+La lógica completa del juego se mantiene dentro del programa ejecutado por el
+procesador RISC-V. De esta forma, los periféricos se encargan únicamente de
+funciones específicas de bajo nivel, como lectura de entradas, comunicación,
+generación de video y control de indicadores.
+
+Se utilizan memorias independientes para instrucciones y datos. La ROM almacena
+el programa que debe ejecutar el procesador, mientras que la RAM contiene la
+información que cambia durante la partida.
+
+La comunicación entre el procesador, la RAM y los periféricos se realiza
+mediante un esquema de memoria mapeada. Esta decisión permite utilizar
+operaciones normales de lectura y escritura para acceder a los diferentes
+dispositivos.
+
+Los periféricos de registros utilizan una interfaz común de 32 bits para
+facilitar su integración. El periférico VGA constituye una excepción debido a
+que utiliza una memoria de video con un rango de direcciones dedicado.
+
+Para la visualización se utiliza una arquitectura basada en bloques. Esto reduce el
+uso de memoria y permite actualizar únicamente las regiones de la pantalla que
+cambian durante la ejecución del juego.
+
+La arquitectura propuesta busca mantener una separación clara entre la lógica
+del juego y el hardware encargado de las interfaces físicas, facilitando las
+pruebas individuales, la integración y futuras modificaciones del sistema.
+
+---
+
+# 10. Estrategia de implementación
+
+La implementación se realizará siguiendo el mismo enfoque top-down utilizado
+durante la etapa de diseño.
+
+## 10.1 Implementación por módulos
+
+Cada subsistema será desarrollado como un módulo independiente en
+SystemVerilog.
+
+El orden propuesto para la implementación es:
+
+1. Memoria ROM.
+2. Memoria RAM.
+3. Interconexión y mapeo de memoria.
+4. Entradas del Jugador 1.
+5. UART.
+6. Indicadores.
+7. VGA.
+8. Procesador RISC-V.
+9. Integración completa del sistema.
+10. Programa del juego en ensamblador.
+
+Esta estrategia permite comprobar el funcionamiento de cada componente antes
+de conectarlo con el resto del sistema.
+
+## 10.2 Integración de memorias y periféricos
+
+Una vez verificados los módulos individuales, se integrarán la RAM y los
+periféricos mediante el bloque de interconexión.
+
+Durante esta etapa se verificará que:
+
+- cada rango de direcciones seleccione únicamente el dispositivo
+  correspondiente
+- las operaciones de escritura lleguen únicamente al módulo seleccionado
+- las operaciones de lectura regresen correctamente al procesador
+- no existan conflictos entre dispositivos dentro del mapa de memoria.
+
+## 10.3 Integración del procesador
+
+Posteriormente se conectará el núcleo RISC-V con:
+
+- la ROM mediante el bus de instrucciones
+- la RAM y los periféricos mediante el bus de datos
+- el bloque de interconexión y mapeo de memoria.
+
+Inicialmente se utilizarán programas pequeños en ensamblador para comprobar
+operaciones de lectura, escritura, saltos y acceso a periféricos.
+
+## 10.4 Implementación del programa del juego
+
+Después de verificar la plataforma de hardware se implementará el programa
+principal de Batalla Naval en ensamblador RISC-V.
+
+El programa se dividirá en rutinas para:
+
+- inicialización del sistema
+- colocación de barcos
+- validación de posiciones
+- lectura de controles
+- recepción y transmisión UART
+- control de turnos
+- procesamiento de disparos
+- detección de impacto o fallo
+- detección de barcos hundidos
+- actualización de VGA
+- actualización de indicadores
+- detección de victoria
+- reinicio de una nueva partida.
+
+Esta división permite mantener el software organizado y facilita la
+verificación individual de cada parte de la lógica del juego.
+
+---
+
+# 11. Plan de pruebas
+
+La validación del sistema se realizará en dos etapas principales: pruebas
+unitarias de cada módulo y pruebas de integración entre subsistemas.
+
+## 11.1 Pruebas unitarias
+
+| Módulo | Prueba propuesta | Resultado esperado |
+|---|---|---|
+| ROM | Consultar diferentes direcciones de programa | Obtener la instrucción correspondiente a cada dirección |
+| RAM | Realizar operaciones de escritura y lectura | Recuperar correctamente el valor almacenado |
+| Interconexión | Acceder a direcciones pertenecientes a diferentes módulos | Activar únicamente la señal de selección correspondiente |
+| Entradas Jugador 1 | Simular pulsaciones y cambios en switches | Obtener señales sincronizadas y sin rebotes |
+| UART RX | Enviar una secuencia serial válida | Reconstruir correctamente el dato recibido |
+| UART TX | Escribir un dato en el registro de transmisión | Generar correctamente la secuencia serial |
+| Indicadores | Escribir diferentes valores en sus registros | Actualizar correctamente display, LED y buzzer |
+| VGA | Escribir distintos valores en la memoria de video | Mostrar correctamente los bloques correspondientes |
+| RISC-V | Ejecutar instrucciones individuales del subconjunto implementado | Obtener el resultado esperado para cada instrucción |
+
+## 11.2 Pruebas de integración
+
+| Prueba | Módulos involucrados | Resultado esperado |
+|---|---|---|
+| CPU + ROM | RISC-V, ROM | Ejecutar correctamente una secuencia de instrucciones |
+| CPU + RAM | RISC-V, interconexión, RAM | Leer y modificar variables almacenadas en memoria |
+| CPU + Entradas | RISC-V, interconexión, entradas J1 | Detectar correctamente acciones del Jugador 1 |
+| CPU + UART | RISC-V, interconexión, UART | Transmitir y recibir información desde la aplicación de PC |
+| CPU + Indicadores | RISC-V, interconexión, indicadores | Actualizar display, LED y buzzer desde software |
+| CPU + VGA | RISC-V, interconexión, VGA | Modificar el contenido mostrado en pantalla desde software |
+| Colocación de barcos | Entradas, UART, RAM, VGA, CPU | Validar y almacenar correctamente los barcos de ambos jugadores |
+| Disparo válido | Entradas/UART, RAM, CPU, VGA | Actualizar tablero, indicar impacto/fallo y cambiar el turno |
+| Disparo repetido | RAM, CPU | Rechazar el disparo y mantener el mismo turno |
+| Barco hundido | RAM, CPU, buzzer | Detectar el barco hundido y generar la indicación correspondiente |
+| Fin de partida | CPU, VGA, UART, indicadores | Mostrar ganador, notificar resultado y actualizar contador de victorias |
+| Reinicio de partida | CPU, RAM, VGA, entradas | Iniciar una nueva partida conservando las victorias acumuladas |
+
+## 11.3 Verificación física
+
+Después de completar las simulaciones, el diseño será implementado en la FPGA
+para comprobar el funcionamiento de las interfaces físicas.
+
+Se verificará:
+
+- funcionamiento de botones y switches
+- comunicación UART con la aplicación de PC
+- visualización VGA
+- displays de siete segmentos
+- LED de estado
+- buzzer
+- ejecución completa de una partida.
+
+---
+
+# 12. Riesgos y aspectos pendientes
+
+Durante la etapa actual de diseño existen algunos aspectos que deben definirse
+o verificarse durante la implementación.
+
+| Aspecto | Estado / riesgo | Acción propuesta |
+|---|---|---|
+| Implementación del RISC-V | Pendiente de integración completa | Verificar individualmente las instrucciones necesarias antes de ejecutar el juego |
+| Organización exacta de la RAM | Debe definirse el índice o dirección correspondiente a cada variable | Elaborar el mapa interno de variables utilizado por el programa |
+| Protocolo UART | Debe completarse el formato exacto de las tramas | Documentar identificadores, longitud y orden de los campos |
+| Temporización VGA | Deben verificarse los parámetros exactos de sincronización | Simular los contadores horizontal y vertical antes de probar físicamente |
+| Memoria de video | Existen dos dominios de reloj | Verificar el funcionamiento de la memoria de doble puerto entre `clk_i` y `clk_pixel_i` |
+| Representación visual | Deben diferenciarse claramente los estados de las casillas | Definir patrones para agua, barco, impacto y fallo |
+| Frecuencias del buzzer | Aún no se han definido todos los tonos | Seleccionar frecuencias distinguibles para cada evento |
+| Debouncing | El tiempo de filtrado debe ser suficiente para los botones físicos | Verificar el comportamiento mediante simulación y pruebas en FPGA |
+| Integración general | Posibles errores entre módulos que funcionan correctamente de forma individual | Integrar el sistema progresivamente y verificar cada nueva conexión |
+| Uso de recursos FPGA | La utilización final aún no se conoce | Revisar los reportes de síntesis e implementación |
+
+Los valores que todavía se encuentren sin definir deberán actualizarse en este
+documento una vez sean seleccionados durante la implementación.
+
+---
+
+# 13. Conclusiones
+
+El diseño propuesto establece una arquitectura modular para implementar el juego Battleship sobre un sistema basado en un procesador RISC-V de 32 bits.
+
+La metodología top-down permitió partir de una representación general del sistema y dividir progresivamente la arquitectura hasta obtener módulos con funciones, interfaces y responsabilidades claramente definidas.
+
+La separación entre el procesador, las memorias y los periféricos permite mantener la lógica completa del juego en software, mientras que el hardware se encarga de las funciones de entrada, salida, comunicación y visualización.
+
+El uso de memoria mapeada proporciona una interfaz uniforme para la comunicación entre el procesador y los diferentes periféricos, simplificando la integración del sistema y la programación en ensamblador.
+
+La división del diseño en módulos independientes permite además realizar una estrategia de validación por etapas, comenzando con pruebas unitarias y continuando posteriormente con pruebas de integración y verificación física sobre la FPGA.
+
+El diseño presentado constituye la base para la etapa de implementación en SystemVerilog y para el posterior desarrollo del programa en ensamblador que controlará la partida completa.

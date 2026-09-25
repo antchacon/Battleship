@@ -620,7 +620,7 @@ El módulo recibe desde el procesador RISC-V la información que debe representa
 
 ### Diagrama
 
-![VGA](imagenes/vga_nivel_3.png)
+![VGA](https://github.com/antchacon/Battleship/blob/main/Docs/Im%C3%A1genes/VGA.png)
 
 **Figura 9. Diagrama de tercer nivel del periférico VGA.**
 
@@ -710,7 +710,7 @@ recibir entradas, mostrar información y comunicarse con el Jugador 2.
 
 ## 8.2 Diagrama de flujo
 
-![Flujo general del juego](imagenes/flujo_juego.png)
+![Flujo general del juego](https://github.com/antchacon/Battleship/blob/main/Docs/Im%C3%A1genes/Flujo%20del%20juego.jpeg)
 
 **Figura 10. Flujo general de ejecución del juego Battleship.**
 

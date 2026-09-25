@@ -363,77 +363,93 @@ La decodificación de direcciones se realiza comparando data_address_i con los r
 ### Decisiones y justificación
 
 Se utiliza un esquema de memoria mapeada debido a que permite que el procesador RISC-V acceda tanto a la memoria RAM como a los diferentes periféricos utilizando las mismas operaciones de lectura y escritura empleadas para acceder a memoria. Cada dispositivo posee un rango de direcciones específico dentro del espacio de memoria del sistema. De esta manera, el procesador únicamente necesita generar una dirección para indicar con qué componente desea comunicarse. Esta organización simplifica la comunicación entre el procesador, la memoria y los periféricos.
+
 ---
 
 ## 7.4 UART
 
 ### Objetivo
 
-[Describir el objetivo del periférico UART.]
+Permite la comunicación entre el procesador RISC-V y los dispositivos externos. Recibe y transmite datos convirtiendo la información interna en datos seriales y realizando el mismo proceso pero en inversa para los datos recibidos.
 
 ### Diagrama
 
-![UART](imagenes/uart_nivel_3.png)
+<img width="891" height="678" alt="image" src="https://github.com/user-attachments/assets/3ee592d2-9cad-41e3-a75b-e81cc1a0e41a" />
 
-**Figura X. Diagrama de tercer nivel del periférico UART.**
+
+**Figura 5. Diagrama de tercer nivel del periférico UART.**
 
 ### Descripción del funcionamiento
 
-[Explicar por separado el camino RX, el camino TX y el acceso desde el CPU.]
+Camino RX: Este recibe los datos seriales provenientes de un dispositivo externo mediante la línea RX. El módulo UART interpreta la secuencia de bits recibida, reconstruye el dato correspondiente y lo almacena temporalmente para que pueda ser leído posteriormente por el procesador.
+Camino TX: Este es el camino de transmisión y se encarga de enviar datos desde el sistema hacia un dispositivo externo.l procesador proporciona el dato que desea transmitir y el periférico UART lo convierte en una secuencia serial.
+Acceso desde el CPU: El procesador RISC-V accede al periférico UART mediante el sistema de memoria mapeada. Dependiendo de la dirección utilizada, el procesador puede leer los datos recibidos por el camino RX o escribir un nuevo dato que será enviado mediante el camino TX.
 
 ### Bloques internos
 
 | Bloque | Función |
 |---|---|
-| Generador de baudrate | |
-| UART RX | |
-| Registro RX | |
-| Registro de estado | |
-| Lógica de decodificación de escritura | |
-| Registro TX | |
-| UART TX | |
-| MUX de lectura | |
+| Generador de baudrate | Genera la señal de temporización utilizada por los modulos de transmisión y recepción para mantener la velocidad configurada de la comunicación UART.|
+| UART RX |Recibe la información serial proveniente de uart_rx_i y reconstruye el dato recibido. |
+| Registro RX | Almacena temporalmente el último dato recibido|
+| Registro de estado | Mantiene información sobre el estado del periférico|
+| Lógica de decodificación de escritura | Determina, a partir de addr_i y write_enable_i, qué registro interno debe modificarse durante una operación de escritura|
+| Registro TX |Almacena temporalmente el dato proporcionado por el procesador antes de iniciar su transmisión. |
+| UART TX |Convierte el dato almacenado en el registro TX en una secuencia serial y lo transmite mediante uart_tx_o |
+| MUX de lectura | Selecciona el registro interno que debe entregarse al procesador mediante rdata_o|
 
 ### Entradas y salidas
 
 | Señal | Dirección | Ancho | Descripción |
 |---|---|---:|---|
-| `uart_rx_i` | Entrada | | |
-| `uart_tx_o` | Salida | | |
-| `addr_i` | Entrada | | |
-| `wdata_i` | Entrada | | |
-| `write_enable_i` | Entrada | | |
-| `rdata_o` | Salida | | |
-| `clk_i` | Entrada | | |
-| `rst_i` | Entrada | | |
+| `uart_rx_i` | Entrada | 1 bit|Línea serial utilizada para recibir datos desde un dispositivo externo |
+| `uart_tx_o` | Salida |1 bit |Línea serial utilizada para transmitir datos hacia un dispositivo externo. |
+| `addr_i` | Entrada | 32 bits|dirección utilizada para seleccionar uno de los registros internos del periférico UART. |
+| `wdata_i` | Entrada |32 bits | Dato que se envía durante la operación de escritura|
+| `write_enable_i` | Entrada | 1 bit| Habilita la operacion de escritura|
+| `rdata_o` | Salida |32 bits |Dato seleccionado desde los registros internos que se envía al procesador |
+| `clk_i` | Entrada |1 bit | Sincroniza el funcionamiento del periferico |
+| `rst_i` | Entrada | 1 bit| Reinicia el periferico UART y registros internos|
 
 ### Señales internas relevantes
 
 | Señal | Ancho | Descripción |
 |---|---:|---|
-| `baud_tick` | | |
-| `rx_data` | | |
-| `rx_ready` | | |
-| `tx_data` | | |
-| `tx_busy` | | |
-| `tx_done` | | |
-| `tx_we` | | |
+| `baud_tick` |1 bit| Pulso de temporización generado de acuerdo con el baudrate configurado.|
+| `rx_data` | 8 bits| Dato recibido y reconstruido por el módulo UART RX.|
+| `rx_ready` |1 bit | Indica que se ha recibido un nuevo dato válido y que se encuentra disponible para el procesador|
+| `tx_data` | 8 bits| Dato que será transmitido por el módulo UART TX|
+| `tx_busy` | 1 bit|Indica que el módulo de transmisión se encuentra enviando un dato. |
+| `tx_done` | 1 bit| GTransmisión de dato finalizada|
+| `tx_we` | 1 bit| Habilita la carga de un nuevo dato |
 
 ### Registros internos
 
-| Dirección / `addr_i` | Registro | Función |
-|---|---|---|
-| | Control / Estado | |
-| | Datos TX | |
-| | Datos RX | |
+| Registro | Función |
+|---|---|
+| Control / Estado |Permite al procesador consultar el estado del periférico |
+| Datos TX |Registro donde el procesador escribe el dato que desea transmitir mediante UART.|
+| Datos RX |Registro desde el cual el procesador puede leer el último dato recibido mediante UART. |
 
 ### Temporización UART
 
-[Indicar baudrate, relación con el reloj principal y cálculo del generador de baudrate.]
+El periférico UART utiliza el reloj principal del sistema para generar la temporización necesaria para la transmisión y recepción de datos. Debido a que la frecuencia del reloj del sistema es considerablemente mayor que la velocidad de comunicación UART, se utiliza un generador de baudrate que divide la frecuencia de clk_i y produce la señal baud_tick.
+
+
+$$
+N = \frac{f_{clk}}{\text{baudrate}}
+$$
+
+donde:
+
+- $f_{clk}$ corresponde a la frecuencia del reloj principal.
+- `baudrate` corresponde a la velocidad configurada para la comunicación.
+- $N$ representa la cantidad de ciclos del reloj necesarios para cada bit transmitido o recibido.
 
 ### Decisiones y justificación
+Se decidió dividir el periférico UART en caminos independientes de recepción y transmisión para permitir que cada operación se controle de forma separada. El módulo RX se encarga exclusivamente de recibir y reconstruir los datos provenientes del exterior, mientras que el módulo TX realiza la conversión de los datos internos del sistema a una secuencia serial.
+El uso de registros intermedios permite desacoplar el funcionamiento del procesador de la temporización propia del protocolo UART. De esta forma, el procesador puede escribir o leer datos mediante operaciones normales de acceso a memoria, mientras que los módulos UART realizan la transmisión o recepción de manera independiente.
 
-[Explicar la división RX/TX, registros y temporización.]
 
 ---
 

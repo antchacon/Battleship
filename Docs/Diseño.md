@@ -441,7 +441,7 @@ Se utiliza un esquema de memoria mapeada debido a que permite que el procesador 
 
 ### Objetivo
 
-[Describir el objetivo del periférico de entradas.]
+Recibir las señales provenientes de los botones y switches utilizados por el jugador 1, acondicionarlas para su uso y proporcionar su estado al procesador RISC-V mediante una interfaz mapeada en memoria. El bloque debe sincronizar las entradas con el reloj del sistema y eliminar los rebotes producidos por los pulsadores antes de que sean procesadas por el programa.
 
 ### Diagrama
 
@@ -449,51 +449,54 @@ Se utiliza un esquema de memoria mapeada debido a que permite que el procesador 
 
 **Figura X. Diagrama de tercer nivel de las entradas del Jugador 1.**
 
-### Descripción del funcionamiento
+### Funcionamiento
 
-[Explicar el recorrido desde las entradas físicas hasta el registro leído por el CPU.]
+Las señales provenientes de los botones y switches de la FPGA ingresan al subsistema de entradas del Jugador 1. Debido a que estas señales provienen de elementos físicos externos, primero se sincronizan con el reloj del sistema. En el caso de los botones, pasan por una etapa de eliminación de rebotes para evitar que una sola pulsación sea interpretada como múltiples eventos. 
+
+Una vez acondicionadas, las señales de los botones y switches se agrupan en un registro de 32 bits. El procesador RISC-V puede consultar este registro mediante una operación de lectura a través de la interfaz de memoria mapeada. De esta manera, el programa puede determinar qué control está activo y utilizarlo para realizar acciones como mover el cursor, confirmar una selección, cambiar la orientación de un barco o reiniciar la partida.
 
 ### Bloques internos
 
 | Bloque | Función |
 |---|---|
-| Sincronizadores de botones | |
-| Debouncers | |
-| Sincronizadores de switches | |
-| Registro Status | |
-| MUX de lectura | |
+| Sincronizadores de botones | Sincronizan las señales de los pulsadores con el reloj del sistema para que puedan ser utilizadas de forma segura. |
+| Debouncers | Eliminan los rebotes mecánicos de los botones y generan una señal estable por cada pulsación. |
+| Sincronizadores de switches | Sincronizan las señales provenientes de los switches con el reloj del sistema. |
+| Registro de estado | Agrupa el estado acondicionado de botones y switches dentro de una palabra que puede ser consultada por el procesador. |
+| Multiplexor de lectura | Selecciona el registro que debe enviarse al procesador de acuerdo con la dirección recibida en la interfaz del periférico. |
 
 ### Entradas y salidas
 
 | Señal | Dirección | Ancho | Descripción |
 |---|---|---:|---|
-| `btn_up_i` | Entrada | | |
-| `btn_down_i` | Entrada | | |
-| `btn_left_i` | Entrada | | |
-| `btn_right_i` | Entrada | | |
-| `btn_center_i` | Entrada | | |
-| `sw_sel_i` | Entrada | | |
-| `sw_rst_i` | Entrada | | |
-| `addr_i` | Entrada | | |
-| `rdata_o` | Salida | | |
-| `clk_i` | Entrada | | |
-| `rst_i` | Entrada | | |
+| `btn_up_i` | Entrada | 1 bit | Botón utilizado para mover el cursor hacia arriba. |
+| `btn_down_i` | Entrada | 1 bit | Botón utilizado para mover el cursor hacia abajo. |
+| `btn_left_i` | Entrada | 1 bit | Botón utilizado para mover el cursor hacia la izquierda. |
+| `btn_right_i` | Entrada | 1 bit | Botón utilizado para mover el cursor hacia la derecha. |
+| `btn_center_i` | Entrada | 1 bit | Botón central utilizado para confirmar una selección o acción. |
+| `sw_sel_i` | Entrada | 1 bit | Switch utilizado como señal de selección, por ejemplo para cambiar la orientación de un barco. |
+| `sw_rst_i` | Entrada | 1 bit | Switch utilizado para solicitar el reinicio de la partida. |
+| `addr_i` | Entrada | 2 bits | Dirección interna utilizada para seleccionar el registro que será leído por el procesador. |
+| `rdata_o` | Salida | 32 bits | Palabra que contiene el estado de los botones y switches y que es enviada al procesador durante una operación de lectura. |
+| `clk_i` | Entrada | 1 bit | Reloj principal utilizado para sincronizar el funcionamiento del periférico. |
+| `rst_i` | Entrada | 1 bit | Señal de reinicio del módulo de entradas. |
 
 ### Mapeo del registro Status
 
 | Bit | Señal | Descripción |
 |---:|---|---|
-| | | |
-
-### Señales internas relevantes
-
-| Señal | Descripción |
-|---|---|
-| | |
+| 0 | btn_up_db | Arriba |
+| 1 | btn_down_db | Abajo |
+| 2 | btn_left_db | Izquierda |
+| 3 | btn_right_db | Derecha |
+| 4 | btn_center_db | Confirmar |
+| 5 | sw_sel_sync | Selección/Orientación |
+| 6 | sw_rst_sync | Reinicio de partida |
+| 31:7 | Reservado | Uso futuro |
 
 ### Decisiones y justificación
 
-[Explicar la necesidad de sincronización, debouncing y agrupación en un registro.]
+El periférico se diseñó separando el acondicionamiento de las señales físicas de la lógica del juego. Los botones pasan primero por bloques de sincronización y debouncing, debido a que son señales externas al reloj del sistema y pueden presentar rebotes mecánicos durante una pulsación. De esta manera, el procesador recibe señales confiables. Los switches únicamente requieren sincronización, ya que no presentan el mismo comportamiento de rebote asociado a los pulsadores durante su uso normal. Todas las entradas acondicionadas se agrupan en un único registro de 32 bits. Esta organización permite que el procesador RISC-V consulte el estado de los controles del Jugador 1 mediante una sola operación de lectura.
 
 ---
 
@@ -501,7 +504,7 @@ Se utiliza un esquema de memoria mapeada debido a que permite que el procesador 
 
 ### Objetivo
 
-[Describir el objetivo del subsistema de indicadores.]
+El subsistema de indicadores tiene como objetivo proporcionar retroalimentación visual y sonora sobre el estado de la partida mediante los displays de 7 segmentos, los leds y el buzzer. El procesador RISC-V controla estos dispositivos mediante registros mapeados en memoria, permitiendo mostrar información como los contadores de victorias, indicar estados del juego y generar sonidos asociados a los eventos de la partida.
 
 ### Diagrama
 
@@ -509,61 +512,96 @@ Se utiliza un esquema de memoria mapeada debido a que permite que el procesador 
 
 **Figura X. Diagrama de tercer nivel del subsistema de indicadores.**
 
-### Descripción del funcionamiento
+### Funcionamiento
 
-[Explicar por separado el funcionamiento del display, LED y buzzer.]
+El subsistema de indicadores recibe desde el procesador RISC-V datos y señales de escritura mediante la interfaz de memoria mapeada. De acuerdo con la dirección seleccionada, la lógica de decodificación determina cuál de los registros internos debe actualizarse, display, LED o buzzer.
+
+El registro de display almacena la información que debe mostrarse en los displays de 7 segmentos. 
+
+El registro del LED almacena directamente el estado que debe reflejarse en la salida led_o, permitiendo indicar condiciones o fases relevantes de la partida.
+
+El registro del buzzer almacena el código asociado al evento que se desea representar mediante sonido. Este valor es interpretado por el selector de sonido, el cual determina el tono correspondiente y lo entrega al generador de frecuencia para producir la señal buzzer_o.
+
+Durante una operación de lectura, el multiplexor interno selecciona el contenido del registro solicitado y lo entrega al procesador mediante rdata_o[31:0].
 
 ### Bloques internos
 
 | Bloque | Función |
 |---|---|
-| Decodificador de dirección/escritura | |
-| Registro Display | |
-| Conversión/separación de dígitos | |
-| Decodificador 7 segmentos | |
-| Multiplexor de display | |
-| Registro LED | |
-| Registro Buzzer | |
-| Selector de sonido | |
-| Generador de frecuencia | |
-| MUX de lectura | |
+| Decodificador de dirección/escritura | Determina cuál de los registros internos debe actualizarse a partir de addr_i y write_enable_i. |
+| Registro Display | Almacena el valor que debe mostrarse en los displays de siete segmentos. |
+| Conversión/separación de dígitos | Divide o adapta el valor almacenado para obtener los dígitos que serán mostrados. |
+| Decodificador 7 segmentos | Convierte cada dígito en el patrón de segmentos necesario para representarlo físicamente. |
+| Multiplexor de display | Selecciona el dígito activo y coordina las señales seg_o y an_o. |
+| Registro LED | Almacena el estado que debe reflejarse en la salida led_o. |
+| Registro Buzzer | Almacena el código correspondiente al evento sonoro solicitado por el procesador. |
+| Selector de sonido | Interpreta el valor del registro del buzzer y selecciona el tono asociado al evento correspondiente. |
+| Generador de frecuencia | Genera la señal periódica que controla físicamente el buzzer. |
+| MUX de lectura | Selecciona el contenido del registro que debe regresar al procesador mediante rdata_o. |
 
 ### Entradas y salidas
 
 | Señal | Dirección | Ancho | Descripción |
 |---|---|---:|---|
-| `addr_i` | Entrada | | |
-| `wdata_i` | Entrada | | |
-| `write_enable_i` | Entrada | | |
-| `rdata_o` | Salida | | |
-| `seg_o` | Salida | | |
-| `an_o` | Salida | | |
-| `led_o` | Salida | | |
-| `buzzer_o` | Salida | | |
-| `clk_i` | Entrada | | |
-| `rst_i` | Entrada | | |
+| `clk_i` | Entrada | 1 bit | Reloj principal utilizado para sincronizar los registros y la lógica interna del periférico. |
+| `rst_i` | Entrada | 1 bit | Reinicia los registros y coloca las salidas del subsistema en su estado inicial. |
+| `write_enable_i` | Entrada | 1 bit | Indica que el procesador desea realizar una operación de escritura. |
+| `addr_i[1:0]` | Entrada | 2 bits | Selecciona el registro interno que será leído o escrito. |
+| `wdata_i[31:0]` | Entrada | 32 bits | Dato enviado por el procesador hacia el registro seleccionado. |
+| `rdata_o[31:0]` | Salida | 32 bits | Dato leído desde el registro interno seleccionado. |
+| `seg_o[6:0]` | Salida | 7 bits | Señales de control de los siete segmentos del display. |
+| `an_o[3:0]` | Salida | 4 bits | Selecciona cuál de los cuatro dígitos del display está activo. |
+| `led_o` | Salida | 1 bit | Señal de control del LED utilizado para indicar estados de la partida. |
+| `buzzer_o` | Salida | 1 bit | Señal digital utilizada para controlar el buzzer y generar la retroalimentación sonora. |
 
 ### Registros internos
 
-| Registro | Función | Dirección / `addr_i` |
-|---|---|---|
-| Display | | |
-| LED | | |
-| Buzzer | | |
+El subsistema de indicadores utiliza registros independientes para controlar
+los displays de siete segmentos, el LED de estado y el buzzer. Cada registro
+mantiene el valor escrito por el procesador hasta que se realiza una nueva
+operación de escritura.
+
+| Registro | Dirección global | Función |
+|---|---:|---|
+| Display | `0x0001_0130` | Almacena la información que debe mostrarse en los cuatro dígitos de siete segmentos. |
+| LED | `0x0001_0138` | Almacena el estado utilizado para controlar el LED de indicación del sistema. |
+| Buzzer | `0x0001_0140` | Almacena el código de control utilizado para seleccionar el sonido que debe generar el buzzer. |
 
 ### Eventos del buzzer
 
+El buzzer proporciona retroalimentación sonora para diferentes eventos de la
+partida. Cada evento debe generar una señal distinta de las demás.
+
 | Evento | Código / tono | Descripción |
 |---|---|---|
-| Impacto | | |
-| Fallo | | |
-| Barco hundido | | |
-| Colocación inválida | | |
-| Victoria | | |
+| Impacto | TBD | Se genera cuando un disparo alcanza una casilla ocupada por un barco rival. |
+| Fallo | TBD | Se genera cuando un disparo alcanza una casilla de agua. |
+| Barco hundido | TBD | Se genera cuando todas las posiciones correspondientes a un barco han sido impactadas. |
+| Colocación inválida | TBD | Se genera cuando se intenta colocar un barco en una posición no permitida. |
+| Fin de partida / victoria | TBD | Se genera cuando todos los barcos de uno de los jugadores han sido hundidos y finaliza la partida. |
 
 ### Decisiones y justificación
 
-[Explicar la separación en registros y la lógica de control de cada salida.]
+El subsistema de indicadores se organiza utilizando registros independientes
+para los displays de siete segmentos, el LED de estado y el buzzer. Esta
+separación permite controlar cada salida de manera individual mediante
+operaciones de escritura realizadas por el procesador RISC-V.
+
+El uso de registros de 32 bits mantiene compatibilidad con la interfaz estándar
+de periféricos definida para el sistema y permite que el procesador acceda a
+los indicadores.
+
+Para los displays de siete segmentos se utiliza una etapa de conversión y
+decodificación que transforma el valor almacenado en el registro en las señales
+necesarias para controlar los segmentos y los dígitos físicos.
+
+El LED se controla mediante un registro propio, permitiendo representar de
+forma sencilla diferentes estados o fases de la partida.
+
+En el caso del buzzer, se utiliza un registro de control separado de la lógica
+de generación de sonido. De esta manera, el procesador únicamente selecciona
+el evento que desea indicar, mientras que el hardware se encarga de generar la
+frecuencia correspondiente.
 
 ---
 

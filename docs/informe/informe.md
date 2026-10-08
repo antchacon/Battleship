@@ -54,75 +54,51 @@ Diseñar e implementar un sistema de Batalla Naval para dos jugadores sobre una 
 ---
 ## 3. Fundamentación teórica
 
-### 3.1 Arquitectura RISC-V y conjunto de instrucciones RV32I
+### 3.1 Procesador RISC-V y lenguaje ensamblador
 
-RISC-V es una arquitectura de conjunto de instrucciones que define las operaciones que puede ejecutar un procesador y su comportamiento desde la perspectiva del software. La arquitectura especifica las instrucciones y los registros disponibles, mientras que su implementación interna puede adoptar distintas organizaciones, como un procesador de ciclo único o uno segmentado.
+RISC-V es una arquitectura de conjunto de instrucciones que define las operaciones que puede ejecutar un procesador. Su conjunto base RV32I utiliza registros de 32 bits e incluye operaciones aritméticas, lógicas, de acceso a memoria y de control del flujo del programa [1]. El lenguaje ensamblador permite expresar estas instrucciones mediante nombres como `add`, `lw`, `sw` y `beq`.
 
-RV32I corresponde al conjunto base de instrucciones enteras de 32 bits. Dispone de 32 registros enteros, identificados desde x0 hasta x31, y de un contador de programa que contiene la dirección de la instrucción. El registro x0 mantiene siempre el valor cero. Las instrucciones base tienen una longitud de 32 bits y permiten realizar operaciones aritméticas, lógicas, desplazamientos, accesos a memoria y cambios en el flujo de ejecución [1].
+En este proyecto se utiliza un procesador previamente disponible para ejecutar el programa de Batalla Naval. El trabajo comprende su integración con las memorias y los periféricos necesarios para el juego.
 
-Las instrucciones se organizan mediante los formatos R, I, S y U, junto con las variantes B y J para saltos. Sus campos codifican la operación, los registros y los valores inmediatos [1].
+### 3.2 Memorias y acceso a periféricos
 
-| Formato | Uso general | Ejemplos |
-|---|---|---|
-| R | Operaciones entre registros | add, sub, and, or |
-| I | Operaciones con inmediato, cargas y salto indirecto | addi, lw, jalr |
-| S | Almacenamiento en memoria | sw |
-| B | Saltos condicionales | beq, bne, blt |
-| U | Construcción de valores con un inmediato superior | lui, auipc |
-| J | Salto con almacenamiento de dirección de retorno | jal |
+La memoria de instrucciones almacena el programa que ejecuta el procesador, mientras que la memoria de datos conserva información que cambia durante su ejecución, como los tableros, los disparos y el turno actual.
 
-En este proyecto se reutiliza un procesador RISC-V previamente disponible. El trabajo se concentra en su integración con las memorias y los periféricos y en la ejecución del programa de Batalla Naval. Las instrucciones necesarias permiten consultar los tableros, modificar variables, evaluar condiciones y acceder a los dispositivos de entrada y salida.
+La entrada y salida mapeada en memoria permite acceder a los periféricos mediante direcciones asignadas a sus registros. Así, el programa puede utilizar instrucciones de lectura y escritura para consultar las entradas del jugador, intercambiar datos por UART y controlar los indicadores y el contenido de la pantalla.
 
-### 3.2 Camino de datos, unidad de control y segmentación
+### 3.3 Generación de video VGA
 
-El camino de datos, o datapath, reúne los componentes que almacenan, seleccionan y procesan la información dentro del procesador. Entre sus elementos se encuentran el contador de programa, el banco de registros, la unidad aritmético-lógica, el generador de inmediatos y los multiplexores.
+La interfaz VGA utiliza señales de color y señales de sincronización horizontal y vertical para formar una imagen. El circuito de video recorre la pantalla de manera continua y establece el color correspondiente a cada píxel [2].
 
-La unidad de control interpreta los campos de cada instrucción y genera las señales que coordinan estos componentes. Por ejemplo, determina qué operación realiza la unidad aritmético-lógica, si debe escribirse un registro y si corresponde efectuar una escritura en memoria.
+La representación mediante tiles divide la pantalla en bloques cuya apariencia se determina mediante códigos almacenados en memoria. Una memoria de doble puerto permite que el procesador actualice estos códigos y que el circuito VGA los consulte mediante un puerto independiente [3]. Esta organización resulta adecuada para representar los tableros y sus distintos estados.
 
-En una organización de ciclo único, cada instrucción completa su ejecución dentro de un periodo de reloj. Por ello, el periodo debe permitir que termine el recorrido combinacional de la instrucción más lenta.
+### 3.4 Comunicación UART y entradas del usuario
 
-En una organización segmentada, o pipeline, la ejecución se divide en etapas separadas por registros. Una organización habitual comprende las siguientes:
+UART permite transmitir y recibir datos de forma serial sin compartir una señal de reloj entre los dispositivos. Ambos extremos deben utilizar la misma velocidad y el mismo formato de transmisión. En Batalla Naval, esta comunicación conecta la FPGA con la aplicación de Python; el protocolo del proyecto define cómo interpretar los datos de colocación, disparos y resultados.
 
-| Etapa | Función |
-|---|---|
-| IF: búsqueda | Obtener la instrucción desde la memoria de programa |
-| ID: decodificación | Interpretar la instrucción y leer los registros fuente |
-| EX: ejecución | Realizar operaciones aritméticas, lógicas o cálculos de direcciones |
-| MEM: memoria | Acceder a la memoria de datos o a los periféricos |
-| WB: escritura de resultado | Actualizar el registro destino cuando corresponde |
+Los botones mecánicos pueden generar varias transiciones al presionarse, fenómeno conocido como rebote. El circuito antirrebote acepta el cambio cuando la señal permanece estable durante un intervalo. Además, la sincronización adapta las entradas al reloj del sistema y reduce el riesgo de que sus cambios afecten el funcionamiento de la lógica.
 
-La segmentación permite que varias instrucciones se encuentren en distintas etapas simultáneamente. Sin embargo, introduce dependencias que deben manejarse para conservar el resultado correcto del programa.
+## 4. Diseño y arquitectura del sistema
 
-Un riesgo de datos ocurre cuando una instrucción necesita un resultado que otra todavía está calculando. Puede resolverse mediante reenvío de resultados, denominado forwarding, o mediante ciclos de espera. Los cambios de flujo también pueden exigir descartar instrucciones que se habían obtenido antes de conocer el destino de un salto.
+### 4.1 Descripción general
 
-El procesador reutilizado contiene registros entre etapas y una unidad de manejo de riesgos. Estos mecanismos son relevantes para el juego porque el ensamblador ejecuta secuencias de lectura, modificación y almacenamiento de datos, además de saltos asociados con las reglas y los turnos.
+El sistema implementa el juego Batalla Naval para dos jugadores. El jugador 1 interactúa mediante los controles de la FPGA y visualiza su información en un monitor VGA. El jugador 2 utiliza una aplicación de Python en la computadora, conectada con la FPGA mediante UART.
 
-### 3.3 Memorias y periféricos mapeados en memoria
+Cada jugador dispone de un tablero de 8 × 8 casillas y una flota de tres barcos de longitudes 4, 3 y 2. La partida comprende la colocación de los barcos, el intercambio de disparos por turnos y la identificación del ganador cuando se hunde toda la flota contraria.
 
-La memoria de programa almacena las instrucciones que ejecuta el procesador. En este sistema se utiliza una ROM inicializada mediante un archivo de memoria. La RAM almacena información variable, como los tableros y las variables de la partida.
+La FPGA integra un procesador RISC-V previamente disponible, la memoria de instrucciones, la memoria de datos y los periféricos del juego. El procesador ejecuta el programa en ensamblador y accede a los periféricos mediante registros mapeados en memoria.
 
-El esquema de entrada y salida mapeada en memoria, o memory-mapped I/O, asigna direcciones a los registros o memorias de los periféricos. De esta manera, el procesador puede acceder a ellos mediante instrucciones de carga y almacenamiento.
+El sistema de video genera la imagen para el jugador 1, mientras que la aplicación de Python presenta la información del jugador 2 y permite introducir sus acciones. Como salidas adicionales, la FPGA utiliza indicadores LED, displays de siete segmentos y un buzzer para comunicar estados y eventos de la partida.
 
-La interconexión analiza la dirección generada por el procesador y selecciona el destino de cada acceso. Durante una escritura, dirige el dato y la habilitación hacia el dispositivo seleccionado. Durante una lectura, selecciona la respuesta que debe regresar al procesador.
+### 4.2 Diagrama de primer nivel
 
-Los registros de los periféricos suelen organizarse según su función:
-
-| Tipo de registro | Propósito |
-|---|---|
-| Control | Configurar una operación o solicitar una acción |
-| Estado | Informar condiciones como disponibilidad de datos o transmisión en curso |
-| Datos | Almacenar información que se desea transmitir, recibir o representar |
-
-Para que la comunicación entre hardware y software sea consistente, deben documentarse las direcciones, el significado de cada bit, los permisos de lectura y escritura, los valores de reinicio y los posibles efectos de cada acceso. También deben evitarse rangos superpuestos y escrituras sobre dispositivos no seleccionados.
-
-Con palabras de 32 bits, las posiciones consecutivas alineadas se separan por cuatro bytes. La dirección de una posición puede expresarse como:
-
-**Dirección = dirección base + 4 × índice**
-
-En Batalla Naval, este mecanismo permite que el ensamblador consulte las entradas del jugador, intercambie información mediante UART y actualice la memoria de video y los registros de indicadores.
+El diagrama de primer nivel representa el sistema completo y sus conexiones con el exterior. Incluye los controles del jugador 1, la comunicación con la computadora del jugador 2 y las salidas hacia el monitor VGA, los indicadores y el buzzer. Su propósito es identificar las entradas y salidas sin detallar todavía los módulos internos.
 
 ## 13. Referencias
 
-[1] RISC-V International. “RV32I Base Integer Instruction Set, Version 2.1”.
-https://docs.riscv.org/reference/isa/v20260120/unpriv/rv32.html
+[1] RISC-V International. *RV32I Base Integer Instruction Set, Version 2.1*. [En línea]. Disponible en: https://docs.riscv.org/reference/isa/v20260120/unpriv/rv32.html. Consultado: 8 de octubre de 2026.
+
+[2] Digilent. *Basys 3 FPGA Board Reference Manual*. [En línea]. Disponible en: https://digilent.com/reference/_media/basys3:basys3_rm.pdf. Consultado: 8 de octubre de 2026.
+
+[3] AMD/Xilinx. *7 Series FPGAs Memory Resources User Guide (UG473)*. [En línea]. Disponible en: https://docs.amd.com/v/u/en-US/ug473_7Series_Memory_Resources. Consultado: 8 de octubre de 2026.
 

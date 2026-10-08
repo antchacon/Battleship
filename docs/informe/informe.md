@@ -90,9 +90,124 @@ La FPGA integra un procesador RISC-V previamente disponible, la memoria de instr
 
 El sistema de video genera la imagen para el jugador 1, mientras que la aplicación de Python presenta la información del jugador 2 y permite introducir sus acciones. Como salidas adicionales, la FPGA utiliza indicadores LED, displays de siete segmentos y un buzzer para comunicar estados y eventos de la partida.
 
+
 ### 4.2 Diagrama de primer nivel
 
-El diagrama de primer nivel representa el sistema completo y sus conexiones con el exterior. Incluye los controles del jugador 1, la comunicación con la computadora del jugador 2 y las salidas hacia el monitor VGA, los indicadores y el buzzer. Su propósito es identificar las entradas y salidas sin detallar todavía los módulos internos.
+El diagrama de primer nivel presenta una visión general del sistema Batalla Naval implementado en la FPGA, identificando sus principales componentes y las señales que permiten la interacción con el exterior.
+
+Como entradas, el sistema recibe un reloj de 100 MHz, utilizado para sincronizar su funcionamiento, los botones para controlar las acciones del jugador 1 y la comunicación con la computadora del jugador 2. Esta última permite intercambiar información entre la FPGA y la aplicación desarrollada en Python.
+
+Las salidas comprenden la interfaz VGA para visualizar el juego, los displays de siete segmentos y los LED para indicar estados de la partida, y el buzzer para proporcionar retroalimentación sonora.
+
+Dentro del sistema se representa el procesador RISC-V, encargado de ejecutar el programa del juego, junto con las memorias ROM y RAM, utilizadas para almacenar las instrucciones y los datos necesarios durante la ejecución.
+
+<p align="center">
+  <img src="../Imágenes/Primer%20Nivel.jpg" width="650"><br>
+  <em>Figura 1. Diagrama de primer nivel del sistema Batalla Naval.</em>
+</p>
+
+### 4.3 Diagrama de segundo nivel
+
+El diagrama de segundo nivel muestra la organización interna del sistema Batalla Naval y las conexiones entre el procesador RISC-V, las memorias y los periféricos. También identifica las principales señales de control y los buses utilizados para intercambiar información entre los diferentes bloques.
+
+El procesador RISC-V constituye la unidad central del sistema. Se conecta directamente con la memoria ROM mediante las señales de dirección e instrucción, permitiendo obtener el programa que debe ejecutar. Por otra parte, se comunica con la RAM y los periféricos a través del bloque de interconexión y mapeo de memoria, utilizando señales de dirección, datos y habilitación de escritura.
+
+La memoria RAM almacena la información utilizada durante la ejecución del juego y recibe las señales necesarias para realizar operaciones de lectura y escritura. El bloque de interconexión determina el destino de cada acceso según la dirección proporcionada por el procesador, permitiendo compartir el espacio de direccionamiento entre la memoria de datos y los periféricos.
+
+Los periféricos se organizan en cuatro bloques principales: Jugador 1, UART, VGA e Indicadores. El primero recibe los botones y switches de la FPGA, UART permite la transmisión y recepción de información con la computadora, VGA genera las señales de color y sincronización para el monitor, y el bloque de indicadores controla los displays de siete segmentos, LED y buzzer. Estos bloques se comunican con el procesador mediante la interconexión de memoria y sus respectivos buses de periféricos.
+
+Finalmente, las señales de reloj y reinicio permiten sincronizar e inicializar los componentes del sistema, mientras que el módulo VGA dispone adicionalmente de un reloj de píxel para la generación de video.
+
+<p align="center">
+  <img src="../Imágenes/Segundo%20Nivel.jpg" width="800"><br>
+  <em>Figura 2. Diagrama de segundo nivel de la arquitectura e interconexión del sistema Batalla Naval.</em>
+</p>
+
+
+### 4.4 Diagramas de tercer nivel
+
+Los diagramas de tercer nivel presentan con mayor detalle la organización interna de los bloques funcionales del sistema Batalla Naval. Estos permiten identificar los módulos que conforman cada periférico, las señales utilizadas y las conexiones necesarias para su funcionamiento.
+
+Para facilitar su interpretación, los diagramas se presentan de manera independiente, incluyendo las memorias ROM y RAM, la interconexión de memoria, las entradas del jugador 1, la comunicación UART, el sistema VGA y los indicadores.
+
+#### 4.4.1 Memoria ROM
+
+La memoria ROM almacena las instrucciones del programa de Batalla Naval que ejecuta el procesador RISC-V. Su estructura incluye un bloque de conversión que transforma la dirección de 32 bits (`prog_address_i`) en un índice de acceso (`addr_index`), utilizado para seleccionar la instrucción correspondiente.
+
+La memoria recibe las señales de reloj (`clk_i`) y reinicio (`rst_i`), mientras que el bloque de inicialización proporciona el contenido del programa. Finalmente, la instrucción seleccionada se entrega al procesador mediante la salida `prog_instr`.
+
+<p align="center">
+  <img src="../Imágenes/ROM.jpeg" width="550"><br>
+  <em>Figura 3. Diagrama de tercer nivel de la memoria ROM.</em>
+</p>
+
+
+#### 4.4.2 Memoria RAM
+
+La memoria RAM permite almacenar y consultar los datos utilizados durante la ejecución del juego. Su estructura incluye un bloque de conversión que transforma la dirección de entrada (`addr_i`) en un índice para acceder a las posiciones de memoria.
+
+La lógica de escritura controla el almacenamiento de datos mediante las señales `wdata_i` y `write_enable_i`. Por su parte, el buffer de lectura entrega el contenido seleccionado mediante `rdata_o[31:0]`. Las señales de reloj (`clk_i`) y reinicio (`rst_i`) permiten controlar el funcionamiento del bloque.
+
+<p align="center">
+  <img src="../Imágenes/RAM.jpeg" width="550"><br>
+  <em>Figura 4. Diagrama de tercer nivel de la memoria RAM.</em>
+</p>
+
+#### 4.4.3 Interconexión y mapeo de memoria
+
+El bloque de interconexión permite comunicar el procesador RISC-V con la memoria RAM y los periféricos mediante direcciones mapeadas en memoria. Su estructura está compuesta por un decodificador de direcciones, un decodificador de escritura y un multiplexor de lectura.
+
+El decodificador de direcciones genera las señales de selección (`sel_ram`, `sel_uart`, `sel_vga`, `sel_j1` y `sel_ind`) para identificar el dispositivo correspondiente. El decodificador de escritura controla las habilitaciones de escritura de cada bloque, mientras que el multiplexor selecciona los datos de lectura que deben regresar al procesador. Esta organización permite gestionar los accesos a memoria y periféricos desde una misma interfaz.
+
+<p align="center">
+  <img src="../Imágenes/Interconexion.jpeg" width="750"><br>
+  <em>Figura 5. Diagrama de tercer nivel de la interconexión y mapeo de memoria.</em>
+</p>
+
+#### 4.4.4 Entradas del jugador 1
+
+El bloque de entradas del jugador 1 permite procesar las señales provenientes de los botones y switches de la FPGA. Los sincronizadores adaptan estas señales al reloj del sistema, mientras que los circuitos antirrebote (*debouncers*) eliminan las transiciones no deseadas producidas por los botones mecánicos.
+
+Las señales procesadas se almacenan en un registro de estado de 32 bits (`status_reg`), que reúne la información de los controles. Finalmente, un multiplexor de lectura utiliza la dirección `addr_i[1:0]` para seleccionar los datos que se entregan al procesador mediante `rdata_o[31:0]`.
+
+<p align="center">
+  <img src="../Imágenes/Entradas%20Jugador%201.jpeg" width="750"><br>
+  <em>Figura 6. Diagrama de tercer nivel del bloque de entradas del jugador 1.</em>
+</p>
+
+
+#### 4.4.5 Comunicación UART
+
+El bloque UART permite la comunicación bidireccional entre la FPGA y la computadora. Su estructura incluye los módulos UART RX y UART TX, encargados de recibir y transmitir datos seriales, respectivamente. Ambos utilizan un generador de baudios que proporciona la señal de temporización (`baud_tick`).
+
+Los registros RX y TX almacenan los datos recibidos y los que serán transmitidos. La lógica de decodificación controla las operaciones de escritura, mientras que el registro de estado conserva señales como `rx_ready`, `tx_busy` y `tx_done`. Finalmente, un multiplexor de lectura permite al procesador consultar los datos recibidos y el estado de la comunicación mediante `rdata_o[31:0]`.
+
+<p align="center">
+  <img src="../Imágenes/UART.jpeg" width="650"><br>
+  <em>Figura 7. Diagrama de tercer nivel del módulo de comunicación UART.</em>
+</p>
+
+#### 4.4.6 Sistema VGA
+
+El sistema VGA se encarga de generar la imagen del juego en el monitor. Su arquitectura incluye un bloque de memoria mapeada que permite al procesador acceder a la memoria de video para actualizar la información visual. El generador de temporización utiliza el reloj de píxel (`clk_pixel_i`) para producir las coordenadas de pantalla (`pixel_x`, `pixel_y`) y las señales de sincronización horizontal y vertical.
+
+El bloque de cálculo de posición determina las coordenadas del tile y la dirección de memoria correspondiente. El generador de píxel utiliza esta información y los datos almacenados en la memoria de video para determinar qué píxeles deben activarse. Finalmente, el generador RGB convierte esta información en las señales de color `vga_red_o`, `vga_green_o` y `vga_blue_o`, necesarias para representar la imagen.
+
+<p align="center">
+  <img src="../Imágenes/VGA.png" width="700"><br>
+  <em>Figura 8. Diagrama de tercer nivel del sistema VGA.</em>
+</p>
+
+#### 4.4.7 Indicadores
+
+El bloque de indicadores permite comunicar visual y auditivamente los estados del juego mediante los displays de siete segmentos, LED y buzzer. Su estructura incluye un decodificador de dirección y escritura que genera las señales de habilitación para los registros de cada dispositivo.
+
+El registro del display almacena la información que posteriormente se separa en dígitos, se convierte a siete segmentos y se multiplexa para su visualización. El registro LED controla los indicadores luminosos, mientras que el registro del buzzer proporciona la información al selector de sonido y al generador de frecuencia. Finalmente, un multiplexor de lectura permite al procesador consultar el contenido de los registros mediante `rdata_o[31:0]`.
+
+<p align="center">
+  <img src="../Imágenes/Indicadores.jpg" width="750"><br>
+  <em>Figura 9. Diagrama de tercer nivel del bloque de indicadores.</em>
+</p>
 
 ## 13. Referencias
 

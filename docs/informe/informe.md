@@ -615,7 +615,6 @@ Además, se observan los LED de la FPGA utilizados para indicar estados del sist
 
 En conjunto, las pruebas físicas confirman el funcionamiento de las principales etapas del sistema: colocación de barcos, interacción del jugador 2 mediante la aplicación Python, fase de batalla, finalización de la partida y operación de los indicadores físicos de la FPGA.
 
-
 ## 10. Análisis e interpretación de resultados
 
 ### 10.1 Análisis de las simulaciones funcionales

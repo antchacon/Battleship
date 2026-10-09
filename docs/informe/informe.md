@@ -1,6 +1,6 @@
 # Proyecto 3: Batalla Naval sobre un microprocesador RISC-V
 
-## Informe técnico
+## Informe 
 
 **Institución:** Instituto Tecnológico de Costa Rica  
 **Escuela:** Ingeniería Electrónica  
